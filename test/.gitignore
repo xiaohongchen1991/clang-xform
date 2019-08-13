@@ -1,0 +1,9 @@
+*~
+bin/
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+googletest-build/
+googletest-download/
+googletest-src
+Makefile
