@@ -42,11 +42,34 @@ if (BUILD_TESTS)
   # remove main.cpp
   list(FILTER SRC_CPP EXCLUDE REGEX ".*main.cpp$")
 
-  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/test/bin)
   # Link GTest library
   add_executable(unittest ${TEST_CPP} ${SRC_CPP})
   target_link_libraries(unittest gtest_main ${CLANG_LIBS})
 
   add_test(NAME unittest COMMAND unittest)
 
+  # copy baseline and helper script into ${CMAKE_BINARY_DIR}
+  file(GLOB_RECURSE BASELINES
+      ${CMAKE_CURRENT_SOURCE_DIR}/*.gold
+  )
+  file(GLOB_RECURSE JSON
+      ${CMAKE_CURRENT_SOURCE_DIR}/*.json
+  )
+  file(GLOB_RECURSE SRC
+      ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
+  )
+  list(FILTER SRC EXCLUDE REGEX ^t)
+  
+  FOREACH(FILE ${BASELINES} ${JSON} ${SRC})
+      file(RELATIVE_PATH RELPATH ${CMAKE_SOURCE_DIR} ${FILE})
+      get_filename_component(RELDIR ${RELPATH} DIRECTORY)
+      set(DIR ${CMAKE_BINARY_DIR}/${RELDIR})
+      file(COPY ${FILE} DESTINATION ${DIR})
+  ENDFOREACH(FILE)
+
+  set(SCRIPT ${CMAKE_SOURCE_DIR}/scripts/update-compile-commands.py)
+  file(COPY ${SCRIPT} DESTINATION ${CMAKE_BINARY_DIR}/scripts
+       FILE_PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ)
+                
 endif(BUILD_TESTS)

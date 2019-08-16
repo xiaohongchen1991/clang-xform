@@ -44,9 +44,18 @@ set(CLANG_LIBS ${CLANG_LIBS} clangToolingRefactor clangFormat clangToolingInclus
 enable_testing()
 option(BUILD_TESTS "Set to ON to build tests" OFF)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 add_executable(${TOOL} ${SRC_CPP})
 target_link_libraries(${TOOL} ${CLANG_LIBS})
+
+# Install the header files
+file(GLOB_RECURSE HEADERS
+    include/*.hpp
+)
+install(FILES ${HEADERS} DESTINATION include)
+
+# install binary
+install(TARGETS ${TOOL} DESTINATION bin)
 
 add_subdirectory(test)

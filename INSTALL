@@ -1,0 +1,23 @@
+== Requirement ==
+
+Clang 8.0.0 and Linux system are required.
+Clang prebuilt binaries are available at http://releases.llvm.org/download.html 
+
+== Build ==
+
+To build tool, supply LLVM root path to cmake.
+
+  mkdir build
+  cd build
+  cmake .. -DCMAKE_INSTALL_PREFIX=./install -DLLVM_ROOT=${LLVM_ROOT} -DBUILD_TESTS=ON
+  make
+
+Here, ${LLVM_ROOT} is the LLVM root path. Set "BUILD_TESTS" to "ON" if you want to build tests.
+
+== Install ==
+
+  make install
+
+== Test ==
+
+  make test
