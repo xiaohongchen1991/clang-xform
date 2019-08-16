@@ -2,12 +2,11 @@
 
 version 1.0.0:
 
-clang-xform - a simple Clang-based app for large-scale C++ code transformation
+clang-xform - a Clang-based app for large-scale C++ code transformation
 
 # Description
 
-**clang-xform** is a clang-based app that automatically performs predefined transformation on C++ source code. It can match certain code pattern and apply specified transformation through the Clang AST matcher and its callback function registered by the user. The predefined AST matchers are listed and explained in [Matcher list](#matcher-list). The [Quick tutorial](#quick-tutorial) will demonstrate how to quickly authorize your own AST matchers and apply them in your codebase. More information can be found in the resources listed in [Resources](#resources).
-
+**clang-xform** is a clang-based app that automatically performs predefined transformation on C++ source code. It can match certain code pattern and apply specified transformation through the Clang AST matcher and its callback function registered by the user. The predefined AST matchers are listed and explained in [Matcher list](#matcher-list). The [Quick tutorial](#quick-tutorial) will demonstrate how to quickly authorize your own AST matchers and apply them in your codebase.
 Author/contact: Xiaohong Chen, xiaohong_chen1991@hotmail.com
 
 # Quick tutorial
@@ -62,7 +61,7 @@ void RenameFooCallback::run(const clang::ast_matchers::MatchFinder::MatchResult&
 
     // Check any AST node matched for the given string ID.
     // The node class name is usually the capitalized node matcher name.
-    if (const Expr*/*[5]*/ RenameFooExpr/*[6]*/ =
+    if (const Expr* /*[5]*/ RenameFooExpr/*[6]*/ =
         Result.Nodes.getNodeAs<Expr/*[7]*/>("RenameFooExpr"/*[8]*/)) {
         // find begin and end file locations of a given node
         auto locStart = srcMgr.getFileLoc(RenameFooExpr/*[9]*/->getBeginLoc());
@@ -98,7 +97,7 @@ void RenameFooCallback::run(const clang::ast_matchers::MatchFinder::MatchResult&
 
     // Check any AST node matched for the given string ID.
     // The node class name is usually the capitalized node matcher name.
-    if (const CallExpr*/*[5]*/ RenameFooExpr/*[6]*/ =
+    if (const CallExpr* /*[5]*/ RenameFooExpr/*[6]*/ =
         Result.Nodes.getNodeAs<CallExpr/*[7]*/>("RenameFooExpr"/*[8]*/)) {
         // find begin and end file locations of a given node
         auto locStart = srcMgr.getFileLoc(RenameFooExpr/*[9]*/->getCallee()->getExprLoc());
@@ -196,7 +195,7 @@ cd rename
 
 Now one can edit RenameFcn.cpp following the instructions in the file. After rebuilding the tool, the new matcher can be selected by "--matchers RenameFcn".
 
-See [Matcher list](matcher-list) for the information about predefined matchers.
+See [Matcher list](#matcher-list) for the information about predefined matchers.
 
 ## -p, --compile-commands compile_commands.json
 
@@ -238,7 +237,7 @@ clang-xform -m DimCastRm FILE -- -g
 
 # Testing
 
-This tool, in general, is used for pattern match and code refactoring. So the test strategy is to compare both the log file and the refactored file with their corresponding baseline. The log file contains matched file, line, code context, and is ideal to be used for testing when the tool is used for pattern match. The refactored file comparison is mainly used for code refactoring testing purpose. The following is the general procedure to add unit test for the new matcher "RenameFoo" demonstrated in [Quick tutorial](quick-tutorial).
+This tool, in general, is used for pattern match and code refactoring. So the test strategy is to compare both the log file and the refactored file with their corresponding baseline. The log file contains matched file, line, code context, and is ideal to be used for testing when the tool is used for pattern match. The refactored file comparison is mainly used for code refactoring testing purpose. The following is the general procedure to add unit test for the new matcher "RenameFoo" demonstrated in [Quick tutorial](#quick-tutorial).
 
 1. Create a src file to be refactored by the matcher. Here, we choose to use default name "example.cpp".
 
