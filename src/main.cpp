@@ -22,6 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#include "clang_xform_config.hpp"
+
 #include "ProgramOptions.hpp"
 #include "Logger.hpp"
 #include "MyFrontendAction.hpp"
@@ -182,6 +184,7 @@ int main(int argc, char **argv) {
     std::string logFile = std::move(args.logFile);
     bool display = args.display;
     bool quiet = args.quiet;
+    bool version = args.version;
 
     // setup log file
     if (logFile.empty()) {
@@ -222,7 +225,13 @@ int main(int argc, char **argv) {
     int flagsum = !compileCommands.empty() + !configFile.empty()
         + !inputFiles.empty() + !matchers.empty()
         + !outputFile.empty() + !replaceFile.empty()
-        + display;
+        + display + version;
+    // Flags --version should be mutually exclusive with the rest options
+    if (version && flagsum > 1) {
+        std::cerr << "Options --version should be mutually exclusive with the rest options" << '\n';
+        std::cerr << "See clang-xform --help" << '\n';
+        return 1;
+    }
     // Flags --apply should be mutually exclusive with the rest options
     if (!replaceFile.empty() && flagsum > 1) {
         std::cerr << "Options --apply should be mutually exclusive with the rest options" << '\n';
@@ -291,7 +300,15 @@ int main(int argc, char **argv) {
         fs::make_absolute(tmp_path);
         file = tmp_path.str().str();
     }
-    
+
+    // print out version number
+    if (version) {
+        std::cout << argv[0] << " version "
+                  << CLANG_XFORM_VERSION_MAJOR << '.'
+                  << CLANG_XFORM_VERSION_MINOR << '.'
+                  << CLANG_XFORM_VERSION_PATCH << '\n';
+        return 0;
+    }
     // display registered matchers
     if (display) {
         const auto& matcherMap = factory.getMatcherMap();

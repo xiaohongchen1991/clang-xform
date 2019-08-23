@@ -52,6 +52,8 @@ struct CommandLineArgs
     bool display = false;
     // silent output
     bool quiet = false;
+    // version number
+    bool version = false;
     // log file
     std::string logFile;
 };

@@ -43,6 +43,7 @@ CommandLineArgs ProcessCommandLine(int argc, char**argv)
         ("c, config", "config file", cxxopts::value<std::string>())
         ("d, display", "display registered matchers", cxxopts::value<bool>())
         ("q, quiet", "silent output", cxxopts::value<bool>())
+        ("v, version", "version number", cxxopts::value<bool>())
         ("l, log", "log file", cxxopts::value<std::string>());
 
     options.parse_positional({"input-files"});
@@ -83,6 +84,10 @@ CommandLineArgs ProcessCommandLine(int argc, char**argv)
 
     if (result.count("quiet")) {
         args.quiet = result["quiet"].as<bool>();
+    }
+
+    if (result.count("version")) {
+        args.version = result["version"].as<bool>();
     }
 
     if (result.count("log")) {
