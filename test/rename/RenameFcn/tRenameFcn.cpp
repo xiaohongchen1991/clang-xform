@@ -20,39 +20,40 @@ using namespace clang::tooling;
 // [3] inputFile, src file name (not path) to refactor, default is "example.cpp"
 
 TEST(MatcherTest, RenameFcn) {
-    // must start with test/
-    std::string dirPath/*[1]*/ = "test/rename/RenameFcn";
-    std::string logFile/*[2]*/ = "sbcodexform.log";
-    std::string inputFile/*[3]*/ = "example.cpp";
-    std::string outputFile = "tmp_output_file.yaml";
-    // chdir dirPath, create outputFile, set logging properties
-    int status = InitTest(dirPath, outputFile);
-    ASSERT_TRUE(status);
-    // setup log file
-    RegisterLogFile log_file(logFile);
+  // must start with test/
+  std::string dirPath/*[1]*/ = "test/rename/RenameFcn";
+  std::string logFile/*[2]*/ = "sbcodexform.log";
+  std::string inputFile/*[3]*/ = "example.cpp";
+  std::string outputFile = "tmp_output_file.yaml";
+  // chdir dirPath, create outputFile, set logging properties
+  int status = InitTest(dirPath, outputFile);
+  ASSERT_TRUE(status);
+  // setup log file
+  RegisterLogFile log_file(logFile);
 
-    std::string refactoredFile = inputFile + ".refactored";
-    std::string baselineFile = inputFile + ".gold";
-    std::string baselineLog = logFile + ".gold";
-    std::vector<std::string> matchers = {"RenameFcn"};
+  std::string refactoredFile = inputFile + ".refactored";
+  std::string baselineFile = inputFile + ".gold";
+  std::string baselineLog = logFile + ".gold";
+  std::vector<std::string> matchers = {"RenameFcn"};
+  std::vector<const char*> args = {"matcher-args-RenameFcn", "--qualified-name", "Foo", "--new-name", "Bar"};
 
-    // retrieve compliation database
-    std::string errMsg;
-    std::unique_ptr<CompilationDatabase> compilations =
-        CompilationDatabase::autoDetectFromSource(inputFile,
-                                                  errMsg);
-    ASSERT_TRUE(compilations != nullptr);
-    clang::tooling::ClangTool tool(*compilations, inputFile);
-    status = tool.run(std::make_unique<MyFrontendActionFactory>(outputFile, matchers).get());
-    ASSERT_EQ(status, 0);
-    // test if matched locations are correct
-    ASSERT_TRUE(CompareFiles(logFile, baselineLog));
-    
-    status = clang::replace::applyReplacements(outputFile, refactoredFile);
-    ASSERT_TRUE(status);
-    
-    if (!IsEmptyFile(outputFile)) {
-        // test if replacements are correct when outputFile is not empty        
-        ASSERT_TRUE(CompareFiles(refactoredFile, baselineFile));
-    }
+  // retrieve compliation database
+  std::string errMsg;
+  std::unique_ptr<CompilationDatabase> compilations =
+      CompilationDatabase::autoDetectFromSource(inputFile,
+                                                errMsg);
+  ASSERT_TRUE(compilations != nullptr);
+  clang::tooling::ClangTool tool(*compilations, inputFile);
+  status = tool.run(std::make_unique<MyFrontendActionFactory>(outputFile, matchers, args).get());
+  ASSERT_EQ(status, 0);
+  // test if matched locations are correct
+  ASSERT_TRUE(CompareFiles(logFile, baselineLog));
+
+  status = clang::replace::applyReplacements(outputFile, refactoredFile);
+  ASSERT_TRUE(status);
+
+  if (!IsEmptyFile(outputFile)) {
+    // test if replacements are correct when outputFile is not empty
+    ASSERT_TRUE(CompareFiles(refactoredFile, baselineFile));
+  }
 }

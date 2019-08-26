@@ -9,8 +9,9 @@ using namespace clang;
 using namespace clang::ast_matchers;
 
 // This is a generated template file to help write your own clang AST matcher and callback.
-// If you want to support command line options, use -o, --option flag for gen-option-matcher.py.
+// If you do not need command line options, remove -o, --option from gen-matcher.py.
 // Please address all comments in /**/ form below!
+// [0] : register command line options in __NAME__Callback::RegisterOptions() and remove comments
 // [1] : use StatementMatcher or DeclarationMatcher
 // [2] : replace it with a suitable node matcher
 // [3] : add narrowing or traversal matchers here
@@ -26,7 +27,26 @@ using namespace clang::ast_matchers;
 namespace {
 
 // Match callback class __NAME__Callback is defined here
-MATCH_CALLBACK(__NAME__Callback);
+OPTION_MATCH_CALLBACK(__NAME__Callback);
+
+// overwrite member function __NAME__Callback::RegisterOptions()
+// to register command line options for your matcher.
+// To retrive registered options, do
+// std::string arg1 = GetOption<std::string>(option1);
+// std::string arg2 = GetOption<std::string>(option2);
+// See matcher/rename/RenameFcn.cpp for example.
+
+/*[0]*/
+// const std::string option1 = "key1";
+// const std::string option2 = "key2";
+void __NAME__Callback::RegisterOptions() {
+  // register std::string type option
+  // AddOption<std::string>(option1);
+  // AddOption<std::string>(option2);
+  // register std::string type option with default value
+  // AddOption<std::string>(option1, "Foo");
+  // AddOption<std::string>(option2, "Bar");
+}
 
 void __NAME__Callback::RegisterMatchers(clang::ast_matchers::MatchFinder* finder) {
   // Define your own matcher here.

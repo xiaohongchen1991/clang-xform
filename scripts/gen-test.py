@@ -22,6 +22,13 @@ def main(argv):
         help='matcher string ID')
 
     parser.add_argument(
+        '-a',
+        '--arguments',
+        nargs='?',
+        type=str,
+        help='matcher arguments string')
+
+    parser.add_argument(
         '-l',
         '--log',
         nargs='?',
@@ -38,6 +45,7 @@ def main(argv):
     args = parser.parse_args()
     logname = args.log
     matcher = args.matcher
+    arguments = args.arguments
 
     file = args.input[0]
     file = os.path.abspath(file)
@@ -46,7 +54,16 @@ def main(argv):
     root = os.path.join(dirname[:dirname.find(root_name)-1], root_name)
     dir_rel = dirname[dirname.find(root_name):]
     dir_rel = os.path.relpath(dir_rel, root_name)
-    
+    arg_list = None
+    if arguments:
+        arg_list = re.sub(r'\s+?', '\", \"', arguments)
+        arg_list = re.sub(r'^\s*?', '\"', arg_list)
+        arg_list = re.sub(r'\s*?$', '\"', arg_list)
+        arg_list = '\"--matcher-args-' + matcher + '", ' + arg_list
+        arguments = '--matcher-args-' + matcher + ' ' + arguments
+    else:
+        arg_list = ''
+        
     script_dir = os.path.dirname(__file__);
     template = os.path.join(script_dir, 'template/TestTemplate.cpp')
 
@@ -59,6 +76,7 @@ def main(argv):
         file_data = file_data.replace('__PATH__', dir_rel)
         file_data = file_data.replace('__FILE__', filename)
         file_data = file_data.replace('__LOG__', logname)
+        file_data = file_data.replace('__ARGS__', arg_list)
 
     # write the data into tmatcher.cpp
     new_file = os.path.join(dirname, 't' + matcher + '.cpp')
@@ -94,7 +112,9 @@ def main(argv):
     
     print('generating ' + log_gold)
     print('generating ' + file_gold)
-    cmd = root + '/bin/clang-xform -m ' + matcher + ' -l ' + log + ' -q ' + file
+    cmd = root + '/bin/clang-xform -m ' + matcher + ' -l ' + log + ' -q -f ' + file
+    if arguments:
+        cmd = cmd + ' ' + arguments
     process = subprocess.run(cmd, shell=True,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)

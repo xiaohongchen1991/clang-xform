@@ -1,8 +1,14 @@
 # Release versions
 
-version 1.0.0:
+version 1.1.0:
 
-clang-xform - a Clang-based app for large-scale C++ code transformation
+* matcher supports its own command line arguments
+
+* gen-test.py supports generating test for matchers with command line options
+
+* matcher "RenameFcn" is modified to support command line options
+
+* support new flag "-v, --version" to display version number
 
 # Description
 
@@ -22,101 +28,117 @@ git clone URL
 2. Let's say the matcher ID is "RenameFoo". One can create a matcher template file by using
 
 ```
-cd clang-xform/src/matchers/rename
+cd INSTALL_DIR/clang-xform/src/matchers/rename
 ../../../scripts/gen-matcher.py RenameFoo
 ```
 
 3. A cpp file named "RenameFoo.cpp" is created in the current working directory. Edit it following the instructions in the file. In RenameFoo.cpp, you only need to edit the definitions of the matcher and its callback function. The following is the code snippet of the generated template file.
 
 ```cpp
-// This a generated template file to help write your own clang AST matcher and callback.
+// This is a generated template file to help write your own clang AST matcher and callback.
+// If you want to support command line options, use -o, --option flag for gen-option-matcher.py.
 // Please address all comments in /**/ form below!
 // [1] : use StatementMatcher or DeclarationMatcher
 // [2] : replace it with a suitable node matcher
 // [3] : add narrowing or traversal matchers here
 // [4] : rename the string ID for a better description of the matched node
-// [5] : replace it with the corresponding node class type binded with the string ID
+// [5] : replace it with the corresponding node class type bound with the string ID
 // [6] : variable name for the matched node
 // [7] : same as [5]
 // [8] : string ID used in matcher, same as [4]
 // [9] : name of the node to be replaced
 // [10]: string used to replace the matched node
-// [11]: use "LogASTNode(locStart, srcMgr, oldExprString)" to log matched AST Node infomation
-// [12]: can register more than one matcher of different types
+// [11]: use "LogASTNode(locStart, srcMgr, oldExprString)" to log matched AST Node information
 
-StatementMatcher/*[1]*/ RenameFooMatcher =
-    expr/*[2]*/(/*[3]*/,
-                isExpansionInMainFile()
-        ).bind("RenameFooExpr"/*[4]*/);
+namespace {
 
 // Match callback class RenameFooCallback is defined here
 MATCH_CALLBACK(RenameFooCallback);
 
-// Defination of RenameFooCallback::run
-void RenameFooCallback::run(const clang::ast_matchers::MatchFinder::MatchResult& Result) {
-    std::string oldExprString;
-    std::string newExprString;
-    const auto& srcMgr = Result.Context->getSourceManager();
-    const auto& langOpts = Result.Context->getLangOpts();
+void RenameFooCallback::RegisterMatchers(clang::ast_matchers::MatchFinder* finder) {
+  // Define your own matcher here.
+  // Use StatementMatcher to match statements and DeclarationMatcher to match declarations.
+  // It is recommended that isExpansionInMainFile() is used to avoid matches in
+  // system headers or third-party libraries.
+  // For AST matcher reference, see: https://clang.llvm.org/docs/LibASTMatchersReference.html
+  // For AST matcher examples, check files under "matchers/" directory
+  StatementMatcher/*[1]*/ RenameFooMatcher =
+      expr/*[2]*/(/*[3]*/,
+                  isExpansionInMainFile()
+                  ).bind("RenameFooExpr"/*[4]*/);
 
-    // Check any AST node matched for the given string ID.
-    // The node class name is usually the capitalized node matcher name.
-    if (const Expr* /*[5]*/ RenameFooExpr/*[6]*/ =
-        Result.Nodes.getNodeAs<Expr/*[7]*/>("RenameFooExpr"/*[8]*/)) {
-        // find begin and end file locations of a given node
-        auto locStart = srcMgr.getFileLoc(RenameFooExpr/*[9]*/->getBeginLoc());
-        auto locEnd = srcMgr.getFileLoc(RenameFooExpr/*[9]*/->getEndLoc());
-        newExprString = ""/*[10]*/;
-        // find source text for a given location
-        oldExprString = getSourceText(locStart, locEnd, srcMgr, langOpts);
-        // replace source text with a given string
-        ReplaceText(srcMgr, SourceRange(std::move(locStart), std::move(locEnd)), newExprString);
-        // log the replacement or AST node if no replacement is made
-        LogReplacement(locStart, srcMgr, oldExprString, newExprString)/*[11]*/;
-    }
+  finder->addMatcher(RenameFooMatcher, this);
+}
+
+// Definition of RenameFooCallback::run
+void RenameFooCallback::run(const clang::ast_matchers::MatchFinder::MatchResult& Result) {
+  std::string oldExprString;
+  std::string newExprString;
+  const auto& srcMgr = Result.Context->getSourceManager();
+  const auto& langOpts = Result.Context->getLangOpts();
+
+  // Check any AST node matched for the given string ID.
+  // The node class name is usually the capitalized node matcher name.
+  if (const Expr*/*[5]*/ RenameFooExpr/*[6]*/ =
+      Result.Nodes.getNodeAs<Expr/*[7]*/>("RenameFooExpr"/*[8]*/)) {
+    // find begin and end file locations of a given node
+    auto locStart = srcMgr.getFileLoc(RenameFooExpr/*[9]*/->getBeginLoc());
+    auto locEnd = srcMgr.getFileLoc(RenameFooExpr/*[9]*/->getEndLoc());
+    newExprString = ""/*[10]*/;
+    // find source text for a given location
+    oldExprString = getSourceText(locStart, locEnd, srcMgr, langOpts);
+    // replace source text with a given string
+    ReplaceText(srcMgr, SourceRange(std::move(locStart), std::move(locEnd)), newExprString);
+    // log the replacement or AST node if no replacement is made
+    LogReplacement(locStart, srcMgr, oldExprString, newExprString)/*[11]*/;
+  }
 }
 ```
 
 In this example, we only need to edit locations [2], [3], [5], [7], [9], and [10]. The new code looks like
 
 ```cpp
-StatementMatcher/*[1]*/ RenameFooMatcher =
-    callExpr/*[2]*/(/*[3]*/callee(functionDecl(hasName("Foo"))),
-                isExpansionInMainFile()
-        ).bind("RenameFooExpr"/*[4]*/);
-
 // Match callback class RenameFooCallback is defined here
 MATCH_CALLBACK(RenameFooCallback);
 
-// Defination of RenameFooCallback::run
-void RenameFooCallback::run(const clang::ast_matchers::MatchFinder::MatchResult& Result) {
-    std::string oldExprString;
-    std::string newExprString;
-    const auto& srcMgr = Result.Context->getSourceManager();
-    const auto& langOpts = Result.Context->getLangOpts();
+void RenameFooCallback::RegisterMatchers(clang::ast_matchers::MatchFinder* finder) {
+  StatementMatcher/*[1]*/ RenameFooMatcher =
+      callExpr/*[2]*/(callee(functionDecl(hasName("Foo")))/*[3]*/,
+                      isExpansionInMainFile()
+                      ).bind("RenameFooExpr"/*[4]*/);
 
-    // Check any AST node matched for the given string ID.
-    // The node class name is usually the capitalized node matcher name.
-    if (const CallExpr* /*[5]*/ RenameFooExpr/*[6]*/ =
-        Result.Nodes.getNodeAs<CallExpr/*[7]*/>("RenameFooExpr"/*[8]*/)) {
-        // find begin and end file locations of a given node
-        auto locStart = srcMgr.getFileLoc(RenameFooExpr/*[9]*/->getCallee()->getExprLoc());
-        auto locEnd = srcMgr.getFileLoc(RenameFooExpr/*[9]*/->getCallee()->getEndLoc());
-        newExprString = "Bar"/*[10]*/;
-        // find source text for a given location
-        oldExprString = getSourceText(locStart, locEnd, srcMgr, langOpts);
-        // replace source text with a given string
-        ReplaceText(srcMgr, SourceRange(std::move(locStart), std::move(locEnd)), newExprString);
-        // log the replacement or AST node if no replacement is made
-        LogReplacement(locStart, srcMgr, oldExprString, newExprString)/*[11]*/;
-    }
+  finder->addMatcher(RenameFooMatcher, this);
+}
+
+// Definition of RenameFooCallback::run
+void RenameFooCallback::run(const clang::ast_matchers::MatchFinder::MatchResult& Result) {
+  std::string oldExprString;
+  std::string newExprString;
+  const auto& srcMgr = Result.Context->getSourceManager();
+  const auto& langOpts = Result.Context->getLangOpts();
+
+  // Check any AST node matched for the given string ID.
+  // The node class name is usually the capitalized node matcher name.
+  if (const CallExpr*/*[5]*/ RenameFooExpr/*[6]*/ =
+      Result.Nodes.getNodeAs<CallExpr/*[7]*/>("RenameFooExpr"/*[8]*/)) {
+    // find begin and end file locations of a given node
+    auto locStart = srcMgr.getFileLoc(RenameFooExpr/*[9]*/->getCallee()->getExprLoc());
+    auto locEnd = srcMgr.getFileLoc(RenameFooExpr/*[9]*/->getCallee()->getEndLoc());
+    newExprString = "Bar"/*[10]*/;
+    // find source text for a given location
+    oldExprString = getSourceText(locStart, locEnd, srcMgr, langOpts);
+    // replace source text with a given string
+    ReplaceText(srcMgr, SourceRange(std::move(locStart), std::move(locEnd)), newExprString);
+    // log the replacement or AST node if no replacement is made
+    LogReplacement(locStart, srcMgr, oldExprString, newExprString)/*[11]*/;
+  }
 }
 ```
 
 4. Rebuild the tool.
 
 ```
-cd clang-xform
+cd INSTALL_DIR/clang-xform
 make
 ```
 
@@ -148,9 +170,49 @@ Note that the replacements stored in output.yaml may duplicate and even conflict
 bin/clang-xform --compile-commands compile_commands.json
 ```
 
-where "compile_commands.json" file contains complilation database for all the files you want to refactor.
+where "compile_commands.json" file contains compilation database for all the files you want to refactor.
 
-8. Writing a unit test for each new added matcher is recommended. A unit test framework is set up for the users to easily add their tests. For more information, see [Testing](#testing).
+8. This matcher can be reused to rename any function callsites. Since the qualified name and new name are hard-coded in the matcher, it is quite inconvenient to edit the code and rebuild it again. Instead, we can supply this information in the command line arguments. To do this, we first use "-o, --option" in gen-matcher.py to regenerate a template file.
+
+```
+cd INSTALL_DIR/clang-xform/src/matchers/rename
+../../../scripts/gen-matcher.py -o RenameFoo
+```
+
+This create a "RenameFcn.cpp" file. Then redo the previous steps. The final version has checked in to the repository. The following is part of the code snippet different from the original one.
+
+```cpp
+// option1: qualified function name to match
+// option2: new function name to use
+const std::string option1 = "qualified-name";
+const std::string option2 = "new-name";
+
+// Match callback class RenameFcnCallback is defined here
+OPTION_MATCH_CALLBACK(RenameFcnCallback);
+
+void RenameFcnCallback::RegisterOptions() {
+  AddOption<std::string>(option1);
+  AddOption<std::string>(option2);
+}
+```
+
+As you can see, MACRO "MATCH\_CALLBACK" is replaced with "OPTION\_MATCH\_CALLBACK", and the member function "RegisterOptions()" is added where user can register different types of options. To retrieve the command arguments, use
+
+```cpp
+std::string value1 = GetOption<std::string>(option1);
+```
+
+Please check this file in the repository for more details. To use this matcher, one has to supply these matcher options in command line. For example,
+
+```
+cd INSTALL_DIR/clang-xform
+bin/clang-xform -m RenameFcn -o output.yaml -f test/rename/RenameFcn/example.cpp \
+--matcher-args-RenameFcn --qualified-name Foo --new-name Bar
+```
+
+Note that, in this case, input-files argument can not be positional when using with matcher arguments. Here "--matcher-args-RenameFcn" is a separator used to tell parser that the arguments after it and before the end or the next separator are used for matcher RenameFcn. For more information, see [Switches and arguments](#switches-and-arguments).
+
+9. Writing a unit test for each new added matcher is recommended. A unit test framework is set up for the users to easily add their tests. For more information, see [Testing](#testing).
 
 
 # Switches and arguments
@@ -166,6 +228,7 @@ sbcodexform
   -q, --quiet                                   # silent output in the terminal
   -l, --log FILE.log                            # log file name
   -f, --input-files "FILE1 ..."                 # files to refactor
+  --matcher-args-MATCHER_NAME [MATCHER_ARGS]    # arguments for registered matcher options
   -- [CLANG_FLAGS]                              # optional argument separator
 ```
 
@@ -183,7 +246,7 @@ One or more matchers to apply. New matchers can be registered in cpp files under
 
 ```
 # cd to matchers folder
-cd clang-xform/src/matchers
+cd INSTALL_DIR/clang-xform/src/matchers
 
 # create a new folder to store your files
 mkdir rename
@@ -223,12 +286,21 @@ One or more files to be refactored. This switch is a positional argument, which 
 
 ```
 clang-xform -m RenameFcn File -- [CLANG_FLAGS]
+```
+
+When using with "--matcher-args-MATCHER\_NAME [MATCHER_ARGS]", the parser cannot tell if the supplied files are positional arguments. In this case, switch "-f, --input-files" has to be used. i.e.
+
+```
 clang-xform -m RenameFcn -p compile_commands.json -f File
 ```
 
+## --matcher-args-MATCHER\_NAME [MATCHER\_ARGS]
+
+Optional arguments for registered matcher options. Here "--matcher-args-Matcher_Name" serves as a separator to tell the parser that the arguments after it and before the next separator are used for the matcher with the given name. This switch has to be used at the end of command line or before "--" if "--" is used for supplying Clang flags.
+
 ## -- [CLANG\_FLAGS]
 
-Optional argument separator used to specify compilation flags for internal clang front-end. This is useful when testing ast_matcher on a simple test file independent from Simulink code base. e.g.
+Optional argument separator used to specify compilation flags for internal clang front-end. If used, it is required to place them at the end of the command line. This is useful when testing ast_matcher on a simple test file. e.g.
 
 ```
 # -g sets debug mode for clang
@@ -242,7 +314,7 @@ This tool, in general, is used for pattern match and code refactoring. So the te
 1. Create a src file to be refactored by the matcher. Here, we choose to use default name "example.cpp".
 
 ```
-cd clang-xform/test/rename
+cd INSTALL_DIR/clang-xform/test/rename
 mkdir RenameFoo
 cd RenameFoo
 emacs example.cpp
@@ -254,12 +326,18 @@ emacs example.cpp
 ../../../gen-test.py -m RenameFoo -l clang-xform.log example.cpp
 ```
 
-This will generate a gtest file named "tRenameFoo.cpp" and two baseline, namely "example.cpp.gold" and "clang-xform.log.gold".
+This will generate a gtest file named "tRenameFoo.cpp" and two baseline, namely "example.cpp.gold" and "clang-xform.log.gold". If the matcher has its own command line options, swtich "-a, --arguments" is required to supply the arguments in a quoted string. e.g.
+
+```
+../../../gen-test.py -m RenameFcn -l clang-xform.log \
+-a "--qualified-name Foo --new-name Bar" example.cpp
+```
+
 
 3. Rebuild the tool by
 
 ```
-cd clang-xform
+cd INSTALL_DIR/clang-xform
 make
 ```
 
@@ -277,9 +355,15 @@ Then, the refactored src file "example.cpp.refactored" and log file "clang-xform
 
 * RenameFcn: rename callsites of a certain function by another specified name
 
+```
+RenameFcn
+  --qualified-name                              # qualified name to match
+  --new-name                                    # new name used to replace matched name
+```
+
 # Linking
 
-Clang 8.0.0 is required. Clang prebuilt binaries are available at http://releases.llvm.org/download.html 
+Clang 8.0.0 is required. Clang prebuilt binaries are available at http://releases.llvm.org/download.html
 
 # Requirements
 
@@ -287,5 +371,5 @@ This tool requires Clang 8.0.0 and a C++ compiler that supports C++14. Linux sys
 
 # TODO list
 
-* Support command line options for matcher
+* Switch from error code into using exception handling
 * Support windows system

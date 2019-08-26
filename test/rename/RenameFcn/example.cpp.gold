@@ -1,6 +1,6 @@
 void Foo() {}
 
 int main() {
-    Bar();
+    Foo();
     return 0;
 }
