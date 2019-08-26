@@ -79,7 +79,7 @@ void RenameFooCallback::run(const clang::ast_matchers::MatchFinder::MatchResult&
 
   // Check any AST node matched for the given string ID.
   // The node class name is usually the capitalized node matcher name.
-  if (const Expr*/*[5]*/ RenameFooExpr/*[6]*/ =
+  if (const Expr* /*[5]*/ RenameFooExpr/*[6]*/ =
       Result.Nodes.getNodeAs<Expr/*[7]*/>("RenameFooExpr"/*[8]*/)) {
     // find begin and end file locations of a given node
     auto locStart = srcMgr.getFileLoc(RenameFooExpr/*[9]*/->getBeginLoc());
@@ -119,7 +119,7 @@ void RenameFooCallback::run(const clang::ast_matchers::MatchFinder::MatchResult&
 
   // Check any AST node matched for the given string ID.
   // The node class name is usually the capitalized node matcher name.
-  if (const CallExpr*/*[5]*/ RenameFooExpr/*[6]*/ =
+  if (const CallExpr* /*[5]*/ RenameFooExpr/*[6]*/ =
       Result.Nodes.getNodeAs<CallExpr/*[7]*/>("RenameFooExpr"/*[8]*/)) {
     // find begin and end file locations of a given node
     auto locStart = srcMgr.getFileLoc(RenameFooExpr/*[9]*/->getCallee()->getExprLoc());
