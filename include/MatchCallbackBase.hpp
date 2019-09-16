@@ -22,26 +22,31 @@
   SOFTWARE.
 */
 
-#ifndef MY_MATCH_CALLBACK_HPP
-#define MY_MATCH_CALLBACK_HPP
+#ifndef MATCH_CALLBACK_BASE_HPP
+#define MATCH_CALLBACK_BASE_HPP
 
 #include "cxxopts.hpp"
+#include "CodeXformException.hpp"
 
-#include <functional>
 #include <iostream>
+#include <memory>
 
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/Tooling/Core/Replacement.h"
 
-class MyMatchCallback : public clang::ast_matchers::MatchFinder::MatchCallback {
+class MatchCallbackBase : public clang::ast_matchers::MatchFinder::MatchCallback {
  public :
-  explicit MyMatchCallback(const std::string& id,
-                           clang::tooling::Replacements& replacements,
-                           std::vector<const char*> args)
+  explicit MatchCallbackBase(const std::string& id,
+                             clang::tooling::Replacements& replacements,
+                             std::vector<const char*> args)
       : mOptions(id), mReplacements(replacements), mArgs(std::move(args))
-  {}
+  {
+    if (!mArgs.empty() && (("--matcher-args-" + id) != mArgs[0])) {
+      throw CommandLineOptionException("Cannot find matcher arguments separator --matcher-args-" + id);
+    }
+  }
 
-  virtual ~MyMatchCallback() {}
+  virtual ~MatchCallbackBase() {}
 
   virtual void RegisterMatchers(clang::ast_matchers::MatchFinder* finder) = 0;
 
@@ -70,6 +75,14 @@ class MyMatchCallback : public clang::ast_matchers::MatchFinder::MatchCallback {
     // default do nothing
   }
 
+  void ParseOptions() {
+    if (!mArgs.empty()) {
+      int argc = static_cast<int>(mArgs.size());
+      char** argv = const_cast<char**>(&mArgs[0]);
+      mResult = std::make_unique<cxxopts::ParseResult>(mOptions.parse(argc, argv));
+    }
+  }
+
  protected:
   template <typename T>
   void AddOption(const std::string& key) {
@@ -77,53 +90,23 @@ class MyMatchCallback : public clang::ast_matchers::MatchFinder::MatchCallback {
   }
 
   template <typename T>
-  void AddOption(const std::string& key, T default_value) {
-    mOptions.add_options()(key, "", cxxopts::value<T>(default_value));
+  void AddOption(const std::string& key, const std::string& value) {
+    mOptions.add_options()(key, "", cxxopts::value<T>()->default_value(value));
   }
 
   template <typename T>
-  T GetOption(const std::string& key) {
-    static int argc = static_cast<int>(mArgs.size());
-    static char** argv = const_cast<char**>(&mArgs[0]);
-    static cxxopts::ParseResult result = mOptions.parse(argc, argv);
-    if (!result.count(key)) {
-      std::cerr << "Option " + key + " is registered, but no corresponding command line argument is provided!" << '\n';
-      exit(1);
-    }
-    assert(result.count(key));
-    return result[key].as<T>();
+  T GetOption(const std::string& key) const {
+    assert(mResult != nullptr);
+    return (*mResult.get())[key].as<T>();
   }
 
  private:
   cxxopts::Options mOptions;
+  // initialization of cxxopts::ParseResult needs to be delayed.
+  // Use heap memory for now. May switch to std::optional if c++17 is supported
+  std::unique_ptr<cxxopts::ParseResult> mResult;
   std::reference_wrapper<clang::tooling::Replacements> mReplacements;
   std::vector<const char*> mArgs;
 };
-
-
-#define MATCH_CALLBACK(NAME)                                                               \
-  class NAME : public MyMatchCallback {                                                    \
-   public :                                                                                \
-   explicit NAME (const std::string& id,                                                   \
-                  clang::tooling::Replacements& replacements,                              \
-                  std::vector<const char*> args)                                           \
-       : MyMatchCallback(id, replacements, std::move(args))                                \
-    {}                                                                                     \
-   virtual void run(const clang::ast_matchers::MatchFinder::MatchResult &Result) override; \
-   virtual void RegisterMatchers(clang::ast_matchers::MatchFinder* finder) override;       \
-  }
-
-#define OPTION_MATCH_CALLBACK(NAME)                                                        \
-  class NAME : public MyMatchCallback {                                                    \
-   public :                                                                                \
-   explicit NAME (const std::string& id,                                                   \
-                  clang::tooling::Replacements& replacements,                              \
-                  std::vector<const char*> args)                                           \
-       : MyMatchCallback(id, replacements, std::move(args))                                \
-    {}                                                                                     \
-   virtual void run(const clang::ast_matchers::MatchFinder::MatchResult &Result) override; \
-   virtual void RegisterMatchers(clang::ast_matchers::MatchFinder* finder) override;       \
-   virtual void RegisterOptions() override;                                                \
-  }
 
 #endif

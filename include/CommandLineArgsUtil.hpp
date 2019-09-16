@@ -22,7 +22,17 @@
   SOFTWARE.
 */
 
-// the configured options and settings for clang-xform
-#define CLANG_XFORM_VERSION_MAJOR 1
-#define CLANG_XFORM_VERSION_MINOR 0
-#define CLANG_XFORM_VERSION_PATCH 0
+#ifndef COMMAND_LINE_ARGS_UTIL_HPP
+#define COMMAND_LINE_ARGS_UTIL_HPP
+
+#include <vector>
+#include <string>
+
+// Strip matcher arguments from command line options
+std::vector<const char*> StripMatcherArgs(int& argc, const char* const * argv);
+
+// Retrieve matcher arguments for a given matcher
+std::vector<const char*> GetMatcherArgs(const std::vector<const char*>& args,
+                                        const std::string& id);
+
+#endif

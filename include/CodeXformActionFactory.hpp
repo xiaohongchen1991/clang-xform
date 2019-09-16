@@ -22,7 +22,36 @@
   SOFTWARE.
 */
 
-// the configured options and settings for clang-xform
-#define CLANG_XFORM_VERSION_MAJOR 1
-#define CLANG_XFORM_VERSION_MINOR 0
-#define CLANG_XFORM_VERSION_PATCH 0
+#ifndef CODE_XFORM_ACTION_FACTORY_HPP
+#define CODE_XFORM_ACTION_FACTORY_HPP
+
+#include <string>
+#include <vector>
+
+#include "clang/Tooling/Tooling.h"
+
+// forward declaration
+namespace clang {
+class FrontendAction;
+} // end of namespace clang
+
+class CodeXformActionFactory : public clang::tooling::FrontendActionFactory {
+ public:
+  CodeXformActionFactory(const std::string& outputFile,
+                         const std::vector<std::string>& matchers,
+                         const std::vector<const char*>& matcherArgs = std::vector<const char*>())
+      : mOutputFile(outputFile),
+        mMatchers(matchers),
+        mMatcherArgs(matcherArgs)
+  {}
+
+  clang::FrontendAction *create() override;
+
+ private:
+  std::reference_wrapper<const std::string> mOutputFile;
+  std::reference_wrapper<const std::vector<std::string> > mMatchers;
+  std::reference_wrapper<const std::vector<const char*> > mMatcherArgs;
+};
+
+
+#endif

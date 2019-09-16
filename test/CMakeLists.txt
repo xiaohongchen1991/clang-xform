@@ -68,7 +68,7 @@ if (BUILD_TESTS)
       file(COPY ${FILE} DESTINATION ${DIR})
   ENDFOREACH(FILE)
 
-  set(SCRIPT ${CMAKE_SOURCE_DIR}/scripts/update-compile-commands.py)
+  set(SCRIPT ${CMAKE_SOURCE_DIR}/scripts/update-compdb.py)
   file(COPY ${SCRIPT} DESTINATION ${CMAKE_BINARY_DIR}/scripts
        FILE_PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ)
                 

@@ -1,7 +1,7 @@
-#include "MyFrontendAction.hpp"
+#include "CodeXformActionFactory.hpp"
 #include "ApplyReplacements.hpp"
 #include "TestingUtil.hpp"
-#include "Logger.hpp"
+#include "cxxlog.hpp"
 
 #include <vector>
 #include <string>
@@ -44,13 +44,12 @@ TEST(MatcherTest, __NAME__) {
                                                 errMsg);
   ASSERT_TRUE(compilations != nullptr);
   clang::tooling::ClangTool tool(*compilations, inputFile);
-  status = tool.run(std::make_unique<MyFrontendActionFactory>(outputFile, matchers, args).get());
+  status = tool.run(std::make_unique<CodeXformActionFactory>(outputFile, matchers, args).get());
   ASSERT_EQ(status, 0);
   // test if matched locations are correct
   ASSERT_TRUE(CompareFiles(logFile, baselineLog));
 
-  status = clang::replace::applyReplacements(outputFile, refactoredFile);
-  ASSERT_TRUE(status);
+  ApplyReplacements(outputFile, refactoredFile);
 
   if (!IsEmptyFile(outputFile)) {
     // test if replacements are correct when outputFile is not empty

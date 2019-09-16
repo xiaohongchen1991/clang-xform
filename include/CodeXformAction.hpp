@@ -22,10 +22,10 @@
   SOFTWARE.
 */
 
-#ifndef MY_FRONTEND_ACTION_HPP
-#define MY_FRONTEND_ACTION_HPP
+#ifndef CODE_XFORM_ACTION_HPP
+#define CODE_XFORM_ACTION_HPP
 
-#include "MyMatchCallback.hpp"
+#include "MatchCallbackBase.hpp"
 
 #include <vector>
 #include <memory>
@@ -35,19 +35,22 @@
 #include "clang/Frontend/FrontendActions.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/Tooling/Core/Replacement.h"
-#include "clang/Frontend/CompilerInstance.h"
-#include "clang/Tooling/Tooling.h"
 
-class MyFrontendAction : public clang::ASTFrontendAction
+// forward declaration
+namespace clang {
+class CompilerInstance;
+} // end of namespace clang
+
+class CodeXformAction : public clang::ASTFrontendAction
 {
  public:
-  explicit MyFrontendAction(const std::string& outputFile,
-                            const std::vector<std::string>& ids,
-                            const std::vector<const char*>& args);
+  explicit CodeXformAction(const std::string& outputFile,
+                           const std::vector<std::string>& ids,
+                           const std::vector<const char*>& args);
 
  protected:
   virtual std::unique_ptr<clang::ASTConsumer>
-  CreateASTConsumer(clang::CompilerInstance &Compiler, llvm::StringRef InFile) override
+  CreateASTConsumer(clang::CompilerInstance &, llvm::StringRef) override
   {
     return mFinder.newASTConsumer();
   }
@@ -57,26 +60,8 @@ class MyFrontendAction : public clang::ASTFrontendAction
   std::reference_wrapper<const std::string> mOutputFile;
   clang::ast_matchers::MatchFinder mFinder;
   clang::tooling::Replacements mReplacements;
-  std::vector<std::unique_ptr<MyMatchCallback> > mCallbacks;
+  std::vector<std::unique_ptr<MatchCallbackBase> > mCallbacks;
   static std::mutex mMutex;
 };
-
-class MyFrontendActionFactory : public clang::tooling::FrontendActionFactory {
- public:
-  MyFrontendActionFactory(const std::string& outputFile,
-                          const std::vector<std::string>& matchers,
-                          const std::vector<const char*>& matcherArgs = std::vector<const char*>())
-      : mOutputFile(outputFile),
-        mMatchers(matchers),
-        mMatcherArgs(matcherArgs)
-  {}
-
-  clang::FrontendAction *create() override { return new MyFrontendAction(mOutputFile.get(), mMatchers.get(), mMatcherArgs.get()); }
- private:
-  std::reference_wrapper<const std::string> mOutputFile;
-  std::reference_wrapper<const std::vector<std::string> > mMatchers;
-  std::reference_wrapper<const std::vector<const char*> > mMatcherArgs;
-};
-
 
 #endif

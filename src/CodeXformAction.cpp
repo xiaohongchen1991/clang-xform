@@ -22,14 +22,14 @@
   SOFTWARE.
 */
 
-#include "MyFrontendAction.hpp"
-#include "Logger.hpp"
+#include "CodeXformAction.hpp"
+#include "cxxlog.hpp"
 #include "ToolingUtil.hpp"
 #include "MatcherFactory.hpp"
 #include "MyReplacementsYaml.hpp"
+#include "CommandLineArgsUtil.hpp"
 
-#include "clang/Tooling/Tooling.h"
-#include "clang/Lex/Lexer.h"
+#include "clang/Frontend/CompilerInstance.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/YAMLTraits.h"
@@ -39,45 +39,18 @@
 
 #include <boost/assert.hpp>
 
+using namespace cxxlog;
 using namespace clang;
 using namespace llvm;
 using namespace llvm::sys;
 using namespace clang::ast_matchers;
 using namespace clang::tooling;
 
-std::mutex MyFrontendAction::mMutex;
+std::mutex CodeXformAction::mMutex;
 
-namespace {
-
-std::vector<const char*> GetMatcherArgs(const std::vector<const char*>& args,
-                                        const std::string& id) {
-  std::vector<const char*> strippedArgs;
-  if (args.empty()) {
-    return strippedArgs;
-  }
-
-  auto begin = std::find_if(args.begin(), args.end(),
-                            [&id](auto str){return (strstr(str, id.c_str()) != nullptr);});
-
-  if (begin == args.end()) {
-    return strippedArgs;
-  }
-
-  auto end = std::find_if(begin + 1, args.end(),
-                          [](auto str){return (strstr(str, "matcher-args") != nullptr);});
-
-  // the first arg will de discarded in cxxopt
-  strippedArgs.reserve(end - begin);
-  strippedArgs.insert(strippedArgs.end(), begin, end);
-
-  return strippedArgs;
-}
-
-} // end of anonymous namespace
-
-MyFrontendAction::MyFrontendAction(const std::string& outputFile,
-                                   const std::vector<std::string>& ids,
-                                   const std::vector<const char*>& args)
+CodeXformAction::CodeXformAction(const std::string& outputFile,
+                                 const std::vector<std::string>& ids,
+                                 const std::vector<const char*>& args)
     : mOutputFile(outputFile)
 {
   // register command line options for each MatchCallback
@@ -88,12 +61,14 @@ MyFrontendAction::MyFrontendAction(const std::string& outputFile,
     assert(mCallbacks.back());
     // register command line options
     mCallbacks.back()->RegisterOptions();
+    // parse command line options
+    mCallbacks.back()->ParseOptions();
     // register AST Matchers with callback functions
     mCallbacks.back()->RegisterMatchers(&mFinder);
   }
 }
 
-bool MyFrontendAction::BeginSourceFileAction (CompilerInstance &CI) {
+bool CodeXformAction::BeginSourceFileAction (CompilerInstance &CI) {
   SourceManager& srcMgr = CI.getSourceManager();
   FileID fileID = srcMgr.getMainFileID();
   const FileEntry* fileEntry = srcMgr.getFileEntryForID(fileID);
@@ -104,7 +79,7 @@ bool MyFrontendAction::BeginSourceFileAction (CompilerInstance &CI) {
   return true;
 }
 
-void MyFrontendAction::EndSourceFileAction() {
+void CodeXformAction::EndSourceFileAction() {
   // see https://github.com/llvm-mirror/clang/blob/master/tools/clang-rename/ClangRename.cpp
   // return if no replacements
   if (mReplacements.empty()) return;

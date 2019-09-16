@@ -25,36 +25,41 @@
 #ifndef MATCHER_FACTORY_HPP
 #define MATCHER_FACTORY_HPP
 
-#include "MyMatchCallback.hpp"
-
 #include<string>
 #include<memory>
 #include<map>
 #include<vector>
 
-#include <boost/core/noncopyable.hpp>
+// forward declaration
+class MatchCallbackBase;
 
-#include "clang/ASTMatchers/ASTMatchFinder.h"
-#include "clang/Tooling/Core/Replacement.h"
+namespace clang {
+namespace tooling {
+class Replacements;
+} // end of namespace tooling
+} // end of namespace clang
 
-class MatcherFactory : private boost::noncopyable {
+class MatcherFactory {
  public:
-  typedef std::unique_ptr<MyMatchCallback> (*CreateCallbackFunction)(const std::string&,
-                                                                     clang::tooling::Replacements&,
-                                                                     std::vector<const char*>);
+  typedef std::unique_ptr<MatchCallbackBase> (*CreateCallbackFunction)(const std::string&,
+                                                                       clang::tooling::Replacements&,
+                                                                       std::vector<const char*>);
   typedef std::map<std::string, CreateCallbackFunction> MatcherMap;
 
+  MatcherFactory(const MatcherFactory&) = delete;
+  MatcherFactory& operator=(const MatcherFactory&) = delete;
+    
   static MatcherFactory& Instance() {
     static MatcherFactory factory;
     return factory;
   }
-
+    
   void RegisterMatchCallback(const std::string& id,
                              CreateCallbackFunction fcn) {
     matcher_map_.emplace(id, fcn);
   }
-
-  std::unique_ptr<MyMatchCallback>
+    
+  std::unique_ptr<MatchCallbackBase>
   CreateMatchCallback(const std::string& id,
                       clang::tooling::Replacements& replacements,
                       std::vector<const char*> args) const {
@@ -75,19 +80,4 @@ class MatcherFactory : private boost::noncopyable {
   MatcherMap matcher_map_;
 };
 
-template <class Callback>
-class MatcherHelper {
- public:
-  MatcherHelper(const std::string& id) {
-    MatcherFactory& factory = MatcherFactory::Instance();
-    factory.RegisterMatchCallback(id, MatcherHelper<Callback>::CreateCallback);
-  }
-  static std::unique_ptr<MyMatchCallback> CreateCallback(const std::string& id,
-                                                         clang::tooling::Replacements& replacements,
-                                                         std::vector<const char*> args) {
-    return std::make_unique<Callback>(id, replacements, std::move(args));
-  }
-};
-
 #endif
-

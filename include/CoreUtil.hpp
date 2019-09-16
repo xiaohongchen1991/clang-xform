@@ -22,7 +22,37 @@
   SOFTWARE.
 */
 
-// the configured options and settings for clang-xform
-#define CLANG_XFORM_VERSION_MAJOR 1
-#define CLANG_XFORM_VERSION_MINOR 0
-#define CLANG_XFORM_VERSION_PATCH 0
+#ifndef CORE_UTIL_HPP
+#define CORE_UTIL_HPP
+
+#include <string>
+#include <vector>
+
+// forward declarations
+namespace clang {
+namespace tooling {
+
+class CompilationDatabase;
+
+} // end namespace toolong
+} // end namespace clang
+
+// execute the given command line
+int ExecCmd(const std::string& cmd, std::string& result);
+inline int ExecCmd(const std::string& cmd) {
+  std::string tmp;
+  return ExecCmd(cmd, tmp);
+}
+
+// parse config file and return string values for a given key
+// return true if succeed
+std::vector<std::string> ParseConfigFile(const std::string& fileName, const std::string& key);
+
+int ProcessFiles(const clang::tooling::CompilationDatabase& compilationDatabase,
+                 const std::vector<std::string>& inputFiles,
+                 const std::string& outputFile,
+                 const std::vector<std::string>& matchers,
+                 const std::vector<const char*>& matcherArgs,
+                 unsigned int numThreads);
+
+#endif

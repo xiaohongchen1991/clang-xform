@@ -1,122 +1,135 @@
-//===-- ApplyReplacements.cpp - Apply and deduplicate replacements --------===//
-//
-// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
-// See https://llvm.org/LICENSE.txt for license information.
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//===----------------------------------------------------------------------===//
-///
-/// \file
-/// \brief This file provides the implementation for deduplicating, detecting
-/// conflicts in, and applying collections of Replacements.
-///
-/// FIXME: Use Diagnostics for output instead of llvm::errs().
-///
-//===----------------------------------------------------------------------===//
+/*
+  MIT License
+
+  Copyright (c) 2019 Xiaohong Chen
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+*/
+
 #include "ApplyReplacements.hpp"
 #include "MyReplacementsYaml.hpp"
-#include "ToolingUtil.hpp"
-#include "Logger.hpp"
+#include "CoreUtil.hpp"
+#include "cxxlog.hpp"
+#include "CodeXformException.hpp"
 
-#include "clang/Basic/LangOptions.h"
 #include "clang/Basic/SourceManager.h"
-#include "clang/Format/Format.h"
-#include "clang/Lex/Lexer.h"
 #include "clang/Rewrite/Core/Rewriter.h"
 #include "clang/Tooling/DiagnosticsYaml.h"
-#include "llvm/ADT/ArrayRef.h"
+#include "clang/Tooling/Refactoring/AtomicChange.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/raw_ostream.h"
 
+using namespace cxxlog;
 using namespace llvm;
 using namespace clang;
 
-static void eatDiagnostics(const SMDiagnostic &, void *) {}
+namespace {
 
-namespace clang {
-namespace replace {
+void eatDiagnostics(const SMDiagnostic &, void *) {}
 
-bool collectReplacementsFromFile(
+/// \brief Collection of TranslationUnitReplacements.
+typedef std::vector<clang::tooling::TranslationUnitReplacements> TUReplacements;
+
+/// \brief Collection of TranslationUnitReplacement files.
+typedef std::vector<std::string> TUReplacementFiles;
+
+/// \brief Collection of TranslationUniDiagnostics.
+typedef std::vector<clang::tooling::TranslationUnitDiagnostics> TUDiagnostics;
+
+/// \brief Map mapping file name to a set of AtomicChange targeting that file.
+typedef llvm::DenseMap<const clang::FileEntry *,
+                       std::vector<tooling::AtomicChange>>
+FileToChangesMap;
+
+void collectReplacementsFromFile(
     const llvm::StringRef FilePath, TUReplacements &TUs,
     clang::DiagnosticsEngine &Diagnostics) {
   using namespace llvm::sys::fs;
   using namespace llvm::sys::path;
 
   if (extension(FilePath) != ".yaml") {
-      errs() << "Error reading " << FilePath << ": file extension is not yaml" << '\n';
-      return false;
+    throw FileSystemException("Extension is not yaml for file: " + FilePath.str());
   }
 
   ErrorOr<std::unique_ptr<MemoryBuffer>> Out =
       MemoryBuffer::getFile(FilePath);
   if (std::error_code BufferError = Out.getError()) {
-      errs() << "Error reading " << FilePath << ": " << BufferError.message()
-             << "\n";
-      return false;
+    throw FileSystemException(BufferError.message());
   }
 
   // Only keep files that properly parse.
   auto buffer = Out.get()->getBuffer();
   if (buffer.empty()) {
-      // ignore empty file
-      return true;
+    // ignore empty file
+    return;
   }
   tooling::TranslationUnitReplacements TU;
   yaml::Input YIn(buffer, nullptr, &eatDiagnostics);
   if (!YIn.error()) {
-      // File doesn't appear to be a header change description. Ignore it.
-      YIn >> TU;
-      TUs.push_back(TU);
+    // File doesn't appear to be a header change description. Ignore it.
+    YIn >> TU;
+    TUs.push_back(TU);
   }
   while (YIn.nextDocument()) {
-      if (!YIn.error()) {
-          YIn >> TU;
-          TUs.push_back(TU);
-      }
+    if (!YIn.error()) {
+      YIn >> TU;
+      TUs.push_back(TU);
+    }
   }
-  return true;
 }
 
-bool collectReplacementsFromFile(
+void collectReplacementsFromFile(
     const llvm::StringRef FilePath, TUDiagnostics &TUs,
     clang::DiagnosticsEngine &Diagnostics) {
-    using namespace llvm::sys::fs;
-    using namespace llvm::sys::path;
+  using namespace llvm::sys::fs;
+  using namespace llvm::sys::path;
 
-    if (extension(FilePath) != ".yaml") {
-        errs() << "Error reading " << FilePath << ": file extension is not yaml" << '\n';
-        return false;
-    }
+  if (extension(FilePath) != ".yaml") {
+    throw FileSystemException("Extension is not yaml for file: " + FilePath.str());
+  }
 
-    ErrorOr<std::unique_ptr<MemoryBuffer>> Out =
-        MemoryBuffer::getFile(FilePath);
-    if (std::error_code BufferError = Out.getError()) {
-        errs() << "Error reading " << FilePath << ": " << BufferError.message()
-               << "\n";
-        return false;
-    }
-    auto buffer = Out.get()->getBuffer();
-    if (buffer.empty()) {
-        // ignore empty file
-        return true;
-    }
-    yaml::Input YIn(buffer, nullptr, &eatDiagnostics);
-    // Only keep files that properly parse.
-    tooling::TranslationUnitDiagnostics TU;
+  ErrorOr<std::unique_ptr<MemoryBuffer>> Out =
+      MemoryBuffer::getFile(FilePath);
+  if (std::error_code BufferError = Out.getError()) {
+    throw FileSystemException(BufferError.message());
+  }
+  auto buffer = Out.get()->getBuffer();
+  if (buffer.empty()) {
+    // ignore empty file
+    return;
+  }
+  yaml::Input YIn(buffer, nullptr, &eatDiagnostics);
+  // Only keep files that properly parse.
+  tooling::TranslationUnitDiagnostics TU;
+  if (!YIn.error()) {
+    // File doesn't appear to be a header change description. Ignore it.
+    YIn >> TU;
+    TUs.push_back(TU);
+  }
+  while (YIn.nextDocument()) {
     if (!YIn.error()) {
-        // File doesn't appear to be a header change description. Ignore it.
-        YIn >> TU;
-        TUs.push_back(TU);
+      YIn >> TU;
+      TUs.push_back(TU);
     }
-    while (YIn.nextDocument()) {
-        if (!YIn.error()) {
-            YIn >> TU;
-            TUs.push_back(TU);
-        }
-    }
-    return true;
+  }
 }
 
 /// \brief Extract replacements from collected TranslationUnitReplacements and
@@ -142,20 +155,20 @@ groupReplacements(const TUReplacements &TUs, const TUDiagnostics &TUDs,
   llvm::DenseMap<const FileEntry *, std::set<tooling::Replacement>>
       DiagReplacements;
   auto AddToGroup = [&](const tooling::Replacement &R, bool FromDiag) {
-    // Use the file manager to deduplicate paths. FileEntries are
-    // automatically canonicalized.
-    if (const FileEntry *Entry = SM.getFileManager().getFile(R.getFilePath())) {
-      if (FromDiag) {
-        auto &Replaces = DiagReplacements[Entry];
-        if (!Replaces.insert(R).second)
-          return;
-      }
-      GroupedReplacements[Entry].push_back(R);
-    } else if (Warned.insert(R.getFilePath()).second) {
-      errs() << "Described file '" << R.getFilePath()
-             << "' doesn't exist. Ignoring...\n";
-    }
-  };
+                      // Use the file manager to deduplicate paths. FileEntries are
+                      // automatically canonicalized.
+                      if (const FileEntry *Entry = SM.getFileManager().getFile(R.getFilePath())) {
+                        if (FromDiag) {
+                          auto &Replaces = DiagReplacements[Entry];
+                          if (!Replaces.insert(R).second)
+                            return;
+                        }
+                        GroupedReplacements[Entry].push_back(R);
+                      } else if (Warned.insert(R.getFilePath()).second) {
+                        errs() << "Described file '" << R.getFilePath()
+                               << "' doesn't exist. Ignoring...\n";
+                      }
+                    };
   for (const auto &TU : TUs)
     for (const tooling::Replacement &R : TU.Replacements)
       AddToGroup(R, false);
@@ -227,76 +240,67 @@ applyChanges(StringRef File, const std::vector<tooling::AtomicChange> &Changes,
                                      Spec);
 }
 
-bool deleteReplacementFile(const llvm::StringRef FilePath,
+void deleteReplacementFile(const llvm::StringRef FilePath,
                            clang::DiagnosticsEngine &Diagnostics) {
-    bool Success = true;
-    std::error_code Error = llvm::sys::fs::remove(FilePath);
-    if (Error) {
-        Success = false;
-        // FIXME: Use Diagnostics for outputting errors.
-        errs() << "Error deleting file: " << FilePath << "\n";
-        errs() << Error.message() << "\n";
-        errs() << "Please delete the file manually\n";
-    }
-    return Success;
+  std::error_code Error = llvm::sys::fs::remove(FilePath);
+  if (Error) {
+    throw FileSystemException("Cannot delete file: " + FilePath.str());
+  }
 }
 
-bool applyReplacements(const llvm::StringRef FilePath, const llvm::StringRef Output) {
-    IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts(new DiagnosticOptions());
-    DiagnosticsEngine Diagnostics(
-        IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()), DiagOpts.get());
+} // end of anonymous namespace
 
-    TUReplacements TURs;
+void ApplyReplacements(const llvm::StringRef FilePath, const llvm::StringRef Output) {
+  IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts(new DiagnosticOptions());
+  DiagnosticsEngine Diagnostics(
+      IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()), DiagOpts.get());
 
-    bool Success =
-      collectReplacementsFromFile(FilePath, TURs, Diagnostics);
+  TUReplacements TURs;
+  collectReplacementsFromFile(FilePath, TURs, Diagnostics);
 
-    TUDiagnostics TUDs;
-    Success =
-        collectReplacementsFromFile(FilePath, TUDs, Diagnostics);
+  TUDiagnostics TUDs;
+  collectReplacementsFromFile(FilePath, TUDs, Diagnostics);
 
-    if (!Success) {
-        errs() << "Cannot read the file '" << FilePath
-               << "'\n";
-        return false;
+  FileManager Files((FileSystemOptions()));
+  SourceManager SM(Diagnostics, Files);
+
+  FileToChangesMap Changes;
+  if (!mergeAndDeduplicate(TURs, TUDs, Changes, SM)) {
+    throw ConflictedReplacementsException();
+  }
+
+  tooling::ApplyChangesSpec Spec;
+
+  for (const auto &FileChange : Changes) {
+    const FileEntry *Entry = FileChange.first;
+    StringRef FileName = Entry->getName();
+    llvm::Expected<std::string> NewFileData =
+        applyChanges(FileName, FileChange.second, Spec, Diagnostics);
+    if (!NewFileData) {
+      throw ApplyChangesException(llvm::toString(NewFileData.takeError()));
     }
 
-    FileManager Files((FileSystemOptions()));
-    SourceManager SM(Diagnostics, Files);
-    
-    FileToChangesMap Changes;
-    if (!mergeAndDeduplicate(TURs, TUDs, Changes, SM))
-        return false;
+    // call p4 edit
+    const std::string cmd = "p4 edit " + FileName.str();
+    TRIVIAL_LOG(severity::info) << "Running command: " << cmd << '\n';
+    std::string p4_result;
+    ExecCmd(cmd + " 2>/dev/null", p4_result);
+    TRIVIAL_LOG(info) << p4_result << '\n';
 
-    tooling::ApplyChangesSpec Spec;
-
-    for (const auto &FileChange : Changes) {
-        const FileEntry *Entry = FileChange.first;
-        StringRef FileName = Entry->getName();
-        llvm::Expected<std::string> NewFileData =
-            applyChanges(FileName, FileChange.second, Spec, Diagnostics);
-        if (!NewFileData) {
-            errs() << llvm::toString(NewFileData.takeError()) << "\n";
-            continue;
-        }
-
-        // Write new file to disk
-        std::error_code EC;
-        if (!Output.empty()) {
-            FileName = Output;
-        }
-        llvm::raw_fd_ostream FileStream(FileName, EC, llvm::sys::fs::F_None);
-        if (EC) {
-            llvm::errs() << "Could not open " << FileName << " for writing\n";
-            continue;
-        }
-        FileStream << *NewFileData;
+    // Write new file to disk
+    std::error_code EC;
+    if (!Output.empty()) {
+      FileName = Output;
     }
+    llvm::raw_fd_ostream FileStream(FileName, EC, llvm::sys::fs::F_None);
+    if (EC) {
+      // swallow this error so that the other files can be processed
+      llvm::errs() << "Could not open " << FileName << " for writing\n";
+      continue;
+    }
+    FileStream << *NewFileData;
+  }
 
-    // Remove yaml file
-    Success = deleteReplacementFile(FilePath, Diagnostics);
-    return Success;
+  // Remove yaml file
+  deleteReplacementFile(FilePath, Diagnostics);
 }
-
-} // end namespace replace
-} // end namespace clang

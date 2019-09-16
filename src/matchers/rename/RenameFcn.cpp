@@ -22,10 +22,10 @@
   SOFTWARE.
 */
 
-#include "MyMatchCallback.hpp"  // provides macro MATCH_CALLBACK to define a new match callback
+#include "MatchCallbackDef.hpp"  // provides macro MATCH_CALLBACK to define a new match callback
 #include "MatcherFactory.hpp"   // a factory class used to register new matcher and callback
+#include "MatcherHelper.hpp"
 #include "ToolingUtil.hpp"      // APIs to extract locations and tokens for a given AST node
-#include "Logger.hpp"           // basic logging functionality
 
 #include <string>
 

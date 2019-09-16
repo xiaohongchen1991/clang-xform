@@ -22,7 +22,26 @@
   SOFTWARE.
 */
 
-// the configured options and settings for clang-xform
-#define CLANG_XFORM_VERSION_MAJOR 1
-#define CLANG_XFORM_VERSION_MINOR 0
-#define CLANG_XFORM_VERSION_PATCH 0
+#ifndef MATCHER_HELPER_HPP
+#define MATCHER_HELPER_HPP
+
+#include "MatcherFactory.hpp"
+
+#include "clang/Tooling/Core/Replacement.h"
+
+template <class Callback>
+class MatcherHelper {
+ public:
+  MatcherHelper(const std::string& id) {
+    MatcherFactory& factory = MatcherFactory::Instance();
+    factory.RegisterMatchCallback(id, MatcherHelper<Callback>::CreateMatchCallback);
+  }
+  static std::unique_ptr<MatchCallbackBase> CreateMatchCallback(const std::string& id,
+                                                                clang::tooling::Replacements& replacements,
+                                                                std::vector<const char*> args) {
+    return std::make_unique<Callback>(id, replacements, std::move(args));
+  }
+};
+
+
+#endif

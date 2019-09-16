@@ -1,7 +1,7 @@
-#include "MyFrontendAction.hpp"
+#include "CodeXformActionFactory.hpp"
 #include "ApplyReplacements.hpp"
 #include "TestingUtil.hpp"
-#include "Logger.hpp"
+#include "cxxlog.hpp"
 
 #include <vector>
 #include <string>
@@ -11,6 +11,7 @@
 
 #include "gtest/gtest.h"
 
+using namespace cxxlog;
 using namespace clang::tooling;
 // This unit test compares the log file and refactored src file with corresponding baseline.
 // The test is self-explained. The user does not need to make any changes here unless
@@ -35,7 +36,7 @@ TEST(MatcherTest, RenameFcn) {
   std::string baselineFile = inputFile + ".gold";
   std::string baselineLog = logFile + ".gold";
   std::vector<std::string> matchers = {"RenameFcn"};
-  std::vector<const char*> args = {"matcher-args-RenameFcn", "--qualified-name", "Foo", "--new-name", "Bar"};
+  std::vector<const char*> args = {"--matcher-args-RenameFcn", "--qualified-name", "Foo", "--new-name", "Bar"};
 
   // retrieve compliation database
   std::string errMsg;
@@ -44,13 +45,12 @@ TEST(MatcherTest, RenameFcn) {
                                                 errMsg);
   ASSERT_TRUE(compilations != nullptr);
   clang::tooling::ClangTool tool(*compilations, inputFile);
-  status = tool.run(std::make_unique<MyFrontendActionFactory>(outputFile, matchers, args).get());
+  status = tool.run(std::make_unique<CodeXformActionFactory>(outputFile, matchers, args).get());
   ASSERT_EQ(status, 0);
   // test if matched locations are correct
   ASSERT_TRUE(CompareFiles(logFile, baselineLog));
 
-  status = clang::replace::applyReplacements(outputFile, refactoredFile);
-  ASSERT_TRUE(status);
+  ApplyReplacements(outputFile, refactoredFile);
 
   if (!IsEmptyFile(outputFile)) {
     // test if replacements are correct when outputFile is not empty
