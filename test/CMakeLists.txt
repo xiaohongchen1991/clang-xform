@@ -45,7 +45,7 @@ if (BUILD_TESTS)
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/test/bin)
   # Link GTest library
   add_executable(unittest ${TEST_CPP} ${SRC_CPP})
-  target_link_libraries(unittest gtest_main ${CLANG_LIBS})
+  target_link_libraries(unittest gtest_main gmock ${CLANG_LIBS})
 
   add_test(NAME unittest COMMAND unittest)
 

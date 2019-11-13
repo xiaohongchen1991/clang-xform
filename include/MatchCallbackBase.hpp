@@ -48,8 +48,6 @@ class MatchCallbackBase : public clang::ast_matchers::MatchFinder::MatchCallback
 
   virtual ~MatchCallbackBase() {}
 
-  virtual void RegisterMatchers(clang::ast_matchers::MatchFinder* finder) = 0;
-
   llvm::Error AddReplacement(const clang::tooling::Replacement& R) {
     return mReplacements.get().add(R);
   }
@@ -71,16 +69,28 @@ class MatchCallbackBase : public clang::ast_matchers::MatchFinder::MatchCallback
                                                       LangOpts));
   }
 
+  virtual void RegisterMatchers(clang::ast_matchers::MatchFinder* finder) = 0;
+
   virtual void RegisterOptions() {
     // default do nothing
   }
 
-  void ParseOptions() {
+  virtual void ParseOptions() {
     if (!mArgs.empty()) {
       int argc = static_cast<int>(mArgs.size());
       char** argv = const_cast<char**>(&mArgs[0]);
       mResult = std::make_unique<cxxopts::ParseResult>(mOptions.parse(argc, argv));
     }
+  }
+
+  // register options and matchers
+  void Register(clang::ast_matchers::MatchFinder* finder) {
+    // 1. register options
+    RegisterOptions();
+    // 2. parse options
+    ParseOptions();
+    // 3. register matchers
+    RegisterMatchers(finder);
   }
 
  protected:

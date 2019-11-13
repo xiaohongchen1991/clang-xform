@@ -59,12 +59,8 @@ CodeXformAction::CodeXformAction(const std::string& outputFile,
     mCallbacks.push_back(factory.CreateMatchCallback(id, mReplacements,
                                                      GetMatcherArgs(args, id)));
     assert(mCallbacks.back());
-    // register command line options
-    mCallbacks.back()->RegisterOptions();
-    // parse command line options
-    mCallbacks.back()->ParseOptions();
-    // register AST Matchers with callback functions
-    mCallbacks.back()->RegisterMatchers(&mFinder);
+    // register command line options and matchers
+    mCallbacks.back()->Register(&mFinder);
   }
 }
 
