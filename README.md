@@ -363,11 +363,11 @@ RenameFcn
 
 # Linking
 
-Clang 8.0.0 is required. Clang prebuilt binaries are available at http://releases.llvm.org/download.html
+Clang 9.0.0 is required. Clang prebuilt binaries are available at http://releases.llvm.org/download.html
 
 # Requirements
 
-This tool requires Clang 8.0.0 and a C++ compiler that supports C++14. Linux system is also required for now.
+This tool requires Clang 9.0.0 and a C++ compiler that supports C++14. Linux system is also required for now.
 
 # TODO list
 

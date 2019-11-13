@@ -1,6 +1,6 @@
 == Requirement ==
 
-Clang 8.0.0 and Linux system are required.
+Clang 9.0.0 and Linux system are required.
 Clang prebuilt binaries are available at http://releases.llvm.org/download.html 
 
 == Build ==

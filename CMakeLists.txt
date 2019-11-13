@@ -55,7 +55,7 @@ endif()
 set(CLANG_LIBS clangTooling clangToolingCore clangFrontendTool clangFrontend clangDriver clangBasic)
 set(CLANG_LIBS ${CLANG_LIBS} clangSerialization clangParse clangSema clangAnalysis clangEdit)
 set(CLANG_LIBS ${CLANG_LIBS} clangRewrite clangRewriteFrontend clangAST clangASTMatchers clangLex)
-set(CLANG_LIBS ${CLANG_LIBS} clangToolingRefactor clangFormat clangToolingInclusions)
+set(CLANG_LIBS ${CLANG_LIBS} clangToolingRefactoring clangFormat clangToolingInclusions)
 
 # enable testing
 enable_testing()
