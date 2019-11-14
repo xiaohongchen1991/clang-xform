@@ -11,6 +11,7 @@
 
 #include "gtest/gtest.h"
 
+using namespace cxxlog;
 using namespace clang::tooling;
 // This unit test compares the log file and refactored src file with corresponding baseline.
 // The test is self-explained. The user does not need to make any changes here unless

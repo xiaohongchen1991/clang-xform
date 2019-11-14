@@ -10,6 +10,7 @@ import sys
 import re
 import subprocess
 import shutil
+from gen_test_compdb import gen_compdb
 
 def main(argv):
     parser = argparse.ArgumentParser()
@@ -35,6 +36,13 @@ def main(argv):
         type=str,
         default='sbcodexform.log',
         help='log file name')
+
+    parser.add_argument(
+        '-p',
+        '--path',
+        required=True,
+        type=str,
+        help='llvm root path')
     
     parser.add_argument(
         'input',
@@ -46,6 +54,7 @@ def main(argv):
     logname = args.log
     matcher = args.matcher
     arguments = args.arguments
+    llvmroot = args.path
 
     file = args.input[0]
     file = os.path.abspath(file)
@@ -90,21 +99,7 @@ def main(argv):
     shutil.copyfile(file, file_copy)
 
     # generate compilation database for the file
-    json_file = os.path.join(dirname, 'compile_commands.json') 
-    print('generating ' + json_file)
-    # read template file
-    template = os.path.join(root, 'scripts', 'template', 'compile_commands.json')
-    template_data = None
-    with open(template, "r") as f:
-        template_data = f.read()
-        # replace the directory name and file name
-        template_data = template_data.replace('__DIRECTORY__', dirname)
-        template_data = template_data.replace('__FILE__', filename)
-
-    # write the data into dirname path
-    with open(json_file, "w") as f:
-        f.write(template_data)
-
+    gen_compdb(file, llvmroot)
     # generating new baselines
     log = os.path.join(dirname, logname)
     file_gold = os.path.join(dirname, filename + '.gold')
