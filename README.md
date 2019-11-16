@@ -364,7 +364,7 @@ RenameFcn
 
 # FAQ
 
-* Q1. What is the difference between "Replacement" and "Insertion"?
+## Q1. What is the difference between "Replacement" and "Insertion"?
 
 Two sets of public APIs are provided in "MatchCallbackBase.hpp" to replace or insert text. i.e.
 
@@ -389,7 +389,7 @@ void InsertText(const clang::SourceManager&,
 
 The major difference here is that InsertText() allows duplications and conflicts. For example, one should be allowed to insert multiple header includes in the same source location. In contrast, ReplaceText() will discard conflicts (e.g. overlapping source ranges) and most duplicates (e.g. same replacement). The only exception happens when using ReplaceText() to do insertion (source range length is zero). In this case, duplicates will be merged (like using InsertText()) instead of discarded. 
 
-* Q2. How to insert a new header include in the file?
+## Q2. How to insert a new header include in the file?
 
 An API is provided in "MatchCallbackBase.hpp" to insert header includes. i.e.
 
