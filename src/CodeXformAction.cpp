@@ -63,13 +63,7 @@ CodeXformAction::CodeXformAction(const std::string& outputFile,
 }
 
 bool CodeXformAction::BeginSourceFileAction (CompilerInstance &CI) {
-  SourceManager& srcMgr = CI.getSourceManager();
-  FileID fileID = srcMgr.getMainFileID();
-  const FileEntry* fileEntry = srcMgr.getFileEntryForID(fileID);
-  SmallString<256> tmp_path(fileEntry->getName());
-  fs::make_absolute(tmp_path);
-  const std::string fileName = tmp_path.str().str();
-  TRIVIAL_LOG(info) << "Processing file: " << fileName << '\n';
+  TRIVIAL_LOG(info) << "Processing file: " << getCurrentFile().str() << '\n';
   return true;
 }
 
@@ -87,6 +81,7 @@ void CodeXformAction::EndSourceFileAction() {
   }
 
   tooling::TranslationUnitReplacements TUR;
+  TUR.MainSourceFile = getCurrentFile().str();
   TUR.Replacements.insert(TUR.Replacements.end(),
                           mReplacements.begin(),
                           mReplacements.end());

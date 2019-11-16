@@ -51,7 +51,38 @@ class MatchCallbackBase : public clang::ast_matchers::MatchFinder::MatchCallback
   llvm::Error AddReplacement(const clang::tooling::Replacement& R) {
     return mReplacements.get().add(R);
   }
-  // return 0 for success
+
+  void MergeReplacement(const clang::tooling::Replacement& R) {
+    mReplacements.get() = mReplacements.get().merge(clang::tooling::Replacements(R));
+  }
+
+  /*
+   *  Abstract: Insert text NewStr in the Start location. Allow deplication and conflicts
+   */
+  void InsertText(const clang::SourceManager &Sources, clang::SourceLocation Start,
+                  llvm::StringRef NewStr) {
+    return MergeReplacement(clang::tooling::Replacement(Sources,
+                                                        Start,
+                                                        0,
+                                                        NewStr));
+  }
+
+  /*
+   * Abstract: Insert a new header in the file with the given fileID and
+   *           group the headers with same regex.
+   *           If the header already exists, ignore it.
+   *           Return a SourceLocation for logging purpose.
+   */
+  llvm::Optional<clang::SourceLocation> InsertHeader(const clang::SourceManager& srcMgr,
+                                                     const clang::FileID& fileID,
+                                                     llvm::StringRef header,
+                                                     llvm::StringRef regex);
+
+  /*
+   *  Abstract: Replace text marked by the given range by the NewStr.
+   *            Conflicts and most duplicates will be discarded.
+   *            One exception: duplicates with "OrigLength == 0" will be merged
+   */
   llvm::Error ReplaceText (const clang::SourceManager &Sources, clang::SourceLocation Start,
                            unsigned OrigLength, llvm::StringRef NewStr) {
     return AddReplacement(clang::tooling::Replacement(Sources,

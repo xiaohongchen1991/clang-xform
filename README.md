@@ -48,7 +48,8 @@ cd INSTALL_DIR/clang-xform/src/matchers/rename
 // [8] : string ID used in matcher, same as [4]
 // [9] : name of the node to be replaced
 // [10]: string used to replace the matched node
-// [11]: use "LogASTNode(locStart, srcMgr, oldExprString)" to log matched AST Node information
+// [11]: Use ReplaceText() for replacement and InsertText() for insertion (ex. header insertion)
+// [12]: use "LogASTNode(locStart, srcMgr, oldExprString)" to log matched AST Node information
 
 namespace {
 
@@ -87,10 +88,10 @@ void RenameFooCallback::run(const clang::ast_matchers::MatchFinder::MatchResult&
     newExprString = ""/*[10]*/;
     // find source text for a given location
     oldExprString = getSourceText(locStart, locEnd, srcMgr, langOpts);
-    // replace source text with a given string
-    ReplaceText(srcMgr, SourceRange(std::move(locStart), std::move(locEnd)), newExprString);
+    // replace source text with a given string or use InsertText() to insert new text
+    ReplaceText(srcMgr, SourceRange(std::move(locStart), std::move(locEnd)), newExprString)/*[11]*/;
     // log the replacement or AST node if no replacement is made
-    LogReplacement(locStart, srcMgr, oldExprString, newExprString)/*[11]*/;
+    LogReplacement(locStart, srcMgr, oldExprString, newExprString)/*[12]*/;
   }
 }
 ```
@@ -127,10 +128,10 @@ void RenameFooCallback::run(const clang::ast_matchers::MatchFinder::MatchResult&
     newExprString = "Bar"/*[10]*/;
     // find source text for a given location
     oldExprString = getSourceText(locStart, locEnd, srcMgr, langOpts);
-    // replace source text with a given string
-    ReplaceText(srcMgr, SourceRange(std::move(locStart), std::move(locEnd)), newExprString);
+    // replace source text with a given string or use InsertText() to insert new text
+    ReplaceText(srcMgr, SourceRange(std::move(locStart), std::move(locEnd)), newExprString)/*[11]*/;
     // log the replacement or AST node if no replacement is made
-    LogReplacement(locStart, srcMgr, oldExprString, newExprString)/*[11]*/;
+    LogReplacement(locStart, srcMgr, oldExprString, newExprString)/*[12]*/;
   }
 }
 ```
@@ -360,6 +361,75 @@ RenameFcn
   --qualified-name                              # qualified name to match
   --new-name                                    # new name used to replace matched name
 ```
+
+# FAQ
+
+* Q1. What is the difference between "Replacement" and "Insertion"?
+
+Two sets of public APIs are provided in "MatchCallbackBase.hpp" to replace or insert text. i.e.
+
+```cpp
+// replace context specified by a starting source location and length with the given string
+llvm::Error MatchCallbackBase::ReplaceText(const clang::SourceManager&,
+	                                       clang::SourceLocation,
+                                           unsigned,
+                                           llvm::StringRef);
+                                            
+// replace context specified by a range of source locations with the given string
+llvm::Error MatchCallbackBase::ReplaceText(const clang::SourceManager&,
+                                           clang::SourceRange,
+                                           llvm::StringRef,
+                                           const clang::LangOptions&);
+
+// insert string in the specified source location
+void InsertText(const clang::SourceManager&,
+                clang::SourceLocation,
+                llvm::StringRef);
+```
+
+The major difference here is that InsertText() allows duplications and conflicts. For example, one should be allowed to insert multiple header includes in the same source location. In contrast, ReplaceText() will discard conflicts (e.g. overlapping source ranges) and most duplicates (e.g. same replacement). The only exception happens when using ReplaceText() to do insertion (source range length is zero). In this case, duplicates will be merged (like using InsertText()) instead of discarded. 
+
+* Q2. How to insert a new header include in the file?
+
+An API is provided in "MatchCallbackBase.hpp" to insert header includes. i.e.
+
+```
+// insert a new header include in the file specified by fileID and
+// group header includes matching the given regex
+llvm::Optional<clang::SourceLocation> InsertHeader(const clang::SourceManager& srcMgr,
+                                                   const clang::FileID& fileID,
+                                                   llvm::StringRef header,
+                                                   llvm::StringRef regex);
+```
+
+This API will first look up for the given header in the file. If it is already existing, the API will simply return. Otherwise the header include will be inserted in the following way.
+
+1. If there exists header include matching the given regex, insert there.
+
+2. Otherwise, insert the new header include after user-defined headers (include "...") and before system and third-party library headers (include <...>).
+
+Here is an example. Let's say we want to include a new header "Foo/foo.hpp". We can set regex to be "Foo". The followings are some possible results.
+
+```
+// file1
+#include "Foo/foo2.hpp"
+#include "Foo/foo.hpp"
+#include "Bar/bar1.hpp"
+#include "Bar/bar2.hpp"
+
+#include <vector>
+#include <memory>
+
+// file2
+#include "Bar/bar1.hpp"
+#include "Bar/bar2.hpp"
+#include "Foo/foo.hpp"
+
+#include <vector>
+#include <memory>
+```
+
+Note that, when inserting new header includes, it is best for your matcher to match each translation unit only once (remove isExpansionInMainFile from generated template matcher) to avoid including the same header multiple times.
 
 # Linking
 

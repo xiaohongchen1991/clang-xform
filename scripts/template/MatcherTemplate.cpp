@@ -20,7 +20,8 @@ using namespace clang::ast_matchers;
 // [8] : string ID used in matcher, same as [4]
 // [9] : name of the node to be replaced
 // [10]: string used to replace the matched node
-// [11]: use "LogASTNode(locStart, srcMgr, oldExprString)" to log matched AST Node information
+// [11]: Use ReplaceText() for replacement and InsertText() for insertion (ex. header insertion)
+// [12]: use "LogASTNode(locStart, srcMgr, oldExprString)" to log matched AST Node information
 
 namespace {
 
@@ -59,10 +60,10 @@ void __NAME__Callback::run(const clang::ast_matchers::MatchFinder::MatchResult& 
     newExprString = ""/*[10]*/;
     // find source text for a given location
     oldExprString = getSourceText(locStart, locEnd, srcMgr, langOpts);
-    // replace source text with a given string
-    ReplaceText(srcMgr, SourceRange(std::move(locStart), std::move(locEnd)), newExprString);
+    // replace source text with a given string or use InsertText() to insert new text
+    ReplaceText(srcMgr, SourceRange(std::move(locStart), std::move(locEnd)), newExprString)/*[11]*/;
     // log the replacement or AST node if no replacement is made
-    LogReplacement(locStart, srcMgr, oldExprString, newExprString)/*[11]*/;
+    LogReplacement(locStart, srcMgr, oldExprString, newExprString)/*[12]*/;
   }
 }
 
