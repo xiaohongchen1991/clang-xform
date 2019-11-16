@@ -23,11 +23,11 @@ using namespace clang::tooling;
 TEST(MatcherTest, RenameFcn) {
   // must start with test/
   std::string dirPath/*[1]*/ = "test/rename/RenameFcn";
-  std::string logFile/*[2]*/ = "sbcodexform.log";
+  std::string logFile/*[2]*/ = "clang-xform.log";
   std::string inputFile/*[3]*/ = "example.cpp";
   std::string outputFile = "tmp_output_file.yaml";
   // chdir dirPath, create outputFile, set logging properties
-  int status = InitTest(dirPath, outputFile);
+  int status = InitTest(dirPath, inputFile, outputFile);
   ASSERT_TRUE(status);
   // setup log file
   RegisterLogFile log_file(logFile);

@@ -1,11 +1,11 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.10)
 
 # tool name
 set(TOOL clang-xform)
 
 # The version number.
 set (CLANG_XFORM_VERSION_MAJOR 1)
-set (CLANG_XFORM_VERSION_MINOR 0)
+set (CLANG_XFORM_VERSION_MINOR 1)
 set (CLANG_XFORM_VERSION_PATCH 0)
 
 set(VERSION ${CLANG_XFORM_VERSION_MAJOR}.${CLANG_XFORM_VERSION_MINOR}.${CLANG_XFORM_VERSION_PATCH})
@@ -14,10 +14,13 @@ message(STATUS "${TOOL} version ${VERSION}")
 project(${TOOL} CXX)
 
 if (NOT DEFINED LLVM_ROOT)
-  message(FATAL_ERROR "Clang 8.0.0 required. Please provide LLVM root path.\n"
+  message(FATAL_ERROR "Clang 9.0.0 required. Please provide LLVM root path.\n"
   "Usage: cmake <dir> -DLLVM_ROOT=<LLVM root path> \n"
   "Clang prebuilt binaries are available at http://releases.llvm.org/download.html")
 endif (NOT DEFINED LLVM_ROOT)
+
+# get absolute path for LLVM_ROOT
+get_filename_component(LLVM_ROOT ${LLVM_ROOT} ABSOLUTE)
 
 find_package(Clang REQUIRED CONFIG
   HINTS "${LLVM_ROOT}/lib/cmake/clang")
@@ -44,10 +47,10 @@ link_directories(${LLVM_LIBRARY_DIRS})
 
 # set compile_options
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  add_definitions(${LLVM_DEFINITIONS} -DCXXOPTS_NO_RTTI)
+  add_definitions(${LLVM_DEFINITIONS} -DCXXOPTS_NO_RTTI -DLLVM_ROOT="${LLVM_ROOT}")
   add_compile_options(-std=c++14 -fno-rtti)
 else ()
-  add_definitions(${LLVM_DEFINITIONS} /DCXXOPTS_NO_RTTI)
+  add_definitions(${LLVM_DEFINITIONS} /DCXXOPTS_NO_RTTI /DLLVM_ROOT=${LLVM_ROOT})
   add_compile_options(/std:c++14 /GR-)
 endif()
 

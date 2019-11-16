@@ -1,7 +1,0 @@
-[
-    {
-        "directory": "/home/sean/Desktop/clang-xform/test/rename/RenameFcn",
-        "file": "example.cpp",
-        "command": "clang++ -c example.cpp -I/usr/local/include -I/usr/include/x86_64-linux-gnu -I/usr/include /home/sean/Public/llvm-9.0.0//lib/clang/9.0.0/include"
-    }
-]

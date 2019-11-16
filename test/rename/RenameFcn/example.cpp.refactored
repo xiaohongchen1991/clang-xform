@@ -1,6 +1,0 @@
-void Foo() {}
-
-int main() {
-    Bar();
-    return 0;
-}

@@ -7,3 +7,6 @@ googletest-build/
 googletest-download/
 googletest-src
 Makefile
+*/*/compile_commands.json
+*/*/*.log
+*/*/*.refactored

@@ -27,7 +27,7 @@ TEST(MatcherTest, __NAME__) {
   std::string inputFile/*[3]*/ = "__FILE__";
   std::string outputFile = "tmp_output_file.yaml";
   // chdir dirPath, create outputFile, set logging properties
-  int status = InitTest(dirPath, outputFile);
+  int status = InitTest(dirPath, inputFile, outputFile);
   ASSERT_TRUE(status);
   // setup log file
   RegisterLogFile log_file(logFile);

@@ -120,27 +120,27 @@ int main(int argc, char **argv) {
 
   // convert dirs and files to absolute path
   if (!compileCommands.empty()) {
-    fs::real_path(compileCommands, tmp_path, true);
+    tmp_path = compileCommands;
     fs::make_absolute(tmp_path);
     compileCommands = tmp_path.str().str();
   }
   if (!outputFile.empty()) {
-    fs::real_path(outputFile, tmp_path, true);
+    tmp_path = outputFile;
     fs::make_absolute(tmp_path);
     outputFile = tmp_path.str().str();
   }
   if (!replaceFile.empty()) {
-    fs::real_path(replaceFile, tmp_path, true);
+    tmp_path = replaceFile;
     fs::make_absolute(tmp_path);
     replaceFile = tmp_path.str().str();
   }
   if (!logFile.empty()) {
-    fs::real_path(logFile, tmp_path, true);
+    tmp_path = logFile;
     fs::make_absolute(tmp_path);
     logFile = tmp_path.str().str();
   }
   for(auto& file : inputFiles) {
-    fs::real_path(file, tmp_path, true);
+    tmp_path = file;
     fs::make_absolute(tmp_path);
     file = tmp_path.str().str();
   }
@@ -265,7 +265,7 @@ int main(int argc, char **argv) {
     // apply replacements
     TRIVIAL_LOG(info) << "Apply replacements: " << outputFile << '\n';
     try {
-      ApplyReplacements(replaceFile);
+      ApplyReplacements(outputFile);
     }
     catch (ConflictedReplacementsException& e) {
       // swallow this exception

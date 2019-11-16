@@ -34,7 +34,7 @@ def main(argv):
         '--log',
         nargs='?',
         type=str,
-        default='sbcodexform.log',
+        default='clang-xform.log',
         help='log file name')
 
     parser.add_argument(
@@ -100,6 +100,7 @@ def main(argv):
 
     # generate compilation database for the file
     gen_compdb(file, llvmroot)
+    
     # generating new baselines
     log = os.path.join(dirname, logname)
     file_gold = os.path.join(dirname, filename + '.gold')

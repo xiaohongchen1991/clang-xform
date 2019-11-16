@@ -2,6 +2,6 @@
     {
         "directory": "__DIRECTORY__",
         "file": "__FILE__",
-        "command": "clang++ -c __FILE__ -I/usr/local/include -I/usr/include/x86_64-linux-gnu -I/usr/include __LLVMROOT__/lib/clang/9.0.0/include"
+        "command": "clang++ -c __FILE__ -I/usr/local/include -I/usr/include/x86_64-linux-gnu -I/usr/include -I__LLVMROOT__/lib/clang/9.0.0/include"
     }
 ]

@@ -37,8 +37,6 @@
 #include <iostream>
 #include <system_error>
 
-#include <boost/assert.hpp>
-
 using namespace cxxlog;
 using namespace clang;
 using namespace llvm;

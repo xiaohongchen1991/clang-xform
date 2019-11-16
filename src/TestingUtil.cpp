@@ -59,6 +59,7 @@ bool CompareFiles(const std::string& p1, const std::string& p2) {
 }
 
 bool InitTest(const std::string& dirPath,
+              const std::string& inputFile,
               const std::string& outputFile) {
   SmallString<256> tmp_path;
   // get exe path
@@ -86,9 +87,13 @@ bool InitTest(const std::string& dirPath,
   // setup logging
   FileLog::Verbosity() = verbosity::minimal;
   TrivialLog::Verbosity() = verbosity::quiet;
-  // update compile_commands.json
-  if (ExecCmd(root + "/scripts/update-compdb.py"))
+  // generate compile_commands.json
+  #ifdef LLVM_ROOT
+  if (ExecCmd(root + "/scripts/gen_test_compdb.py -p " + TOSTRING(LLVM_ROOT) + " " + inputFile))
     return false;
+  #else
+  static_assert(false, "Definition for MACRO LLVM_ROOT is not provided");
+  #endif
 
   return true;
 }

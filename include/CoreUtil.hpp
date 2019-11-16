@@ -28,6 +28,10 @@
 #include <string>
 #include <vector>
 
+// convert a macro into a string
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+
 // forward declarations
 namespace clang {
 namespace tooling {

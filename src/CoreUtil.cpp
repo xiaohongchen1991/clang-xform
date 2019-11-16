@@ -27,7 +27,6 @@
 #include "DiagnosticLogger.hpp"
 #include "CodeXformActionFactory.hpp"
 
-#include <array>
 #include <sstream>
 #include <fstream>
 #include <cassert>
@@ -59,15 +58,20 @@ inline std::string RemoveWhitespace(const std::string& s)
 } // end anonymous namespace
 
 int ExecCmd(const std::string& cmd, std::string& result) {
-  std::array<char, 128> buffer;
-  FILE* pipe = popen(cmd.c_str(), "r");
-  if (!pipe) {
-    throw std::runtime_error("popen() failed!");
-  }
-  while (fgets(buffer.data(), buffer.size(), pipe) != nullptr) {
-    result += buffer.data();
-  }
-  return WEXITSTATUS(pclose(pipe));
+  std::string filename = "tmp.txt";
+  int status = std::system((cmd + " > " + filename + " 2>&1").c_str());
+  std::ifstream ifs(filename);
+  ifs.seekg(0, std::ios::end);
+  result.reserve(ifs.tellg());
+  ifs.seekg(0, std::ios::beg);
+
+  result.assign((std::istreambuf_iterator<char>(ifs)),
+                std::istreambuf_iterator<char>());
+
+  ifs.close();
+  remove(filename.c_str());
+
+  return status;
 }
 
 std::vector<std::string> ParseConfigFile(const std::string& fileName, const std::string& key)
