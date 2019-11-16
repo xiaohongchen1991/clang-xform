@@ -81,15 +81,17 @@ void collectReplacementsFromFile(
     // ignore empty file
     return;
   }
-  tooling::TranslationUnitReplacements TU;
+
   yaml::Input YIn(buffer, nullptr, &eatDiagnostics);
   if (!YIn.error()) {
     // File doesn't appear to be a header change description. Ignore it.
+    tooling::TranslationUnitReplacements TU;
     YIn >> TU;
     TUs.push_back(TU);
   }
   while (YIn.nextDocument()) {
     if (!YIn.error()) {
+      tooling::TranslationUnitReplacements TU;
       YIn >> TU;
       TUs.push_back(TU);
     }
@@ -118,14 +120,15 @@ void collectReplacementsFromFile(
   }
   yaml::Input YIn(buffer, nullptr, &eatDiagnostics);
   // Only keep files that properly parse.
-  tooling::TranslationUnitDiagnostics TU;
   if (!YIn.error()) {
     // File doesn't appear to be a header change description. Ignore it.
+    tooling::TranslationUnitDiagnostics TU;
     YIn >> TU;
     TUs.push_back(TU);
   }
   while (YIn.nextDocument()) {
     if (!YIn.error()) {
+      tooling::TranslationUnitDiagnostics TU;
       YIn >> TU;
       TUs.push_back(TU);
     }
