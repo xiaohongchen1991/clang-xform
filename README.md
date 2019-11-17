@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/xiaohongchen1991/clang-xform.svg?branch=master)](https://travis-ci.com/xiaohongchen1991/clang-xform)
+
 # Release versions
 
 version 1.1.0:
