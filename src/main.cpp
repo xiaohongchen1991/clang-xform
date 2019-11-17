@@ -282,6 +282,5 @@ int main(int argc, char **argv) {
   }
 
   std::cout << '\n' << "Check " << logFile << " to see log information" << "\n\n";
-
   return status;
 }
