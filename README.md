@@ -220,18 +220,21 @@ Note that, in this case, input-files argument can not be positional when using w
 ```
 sbcodexform
   -h, --help                                    # produce help message
+  -v, --version                                 # print out version number
   -a, --apply FILE.yaml                         # apply replacements
   -j, --num-threads N                           # number of threads, default all cores
   -p, --compile-commands compile_commands.json  # read compile commands for clang
-  -m, --matchers "MATCHER1 ..."                 # select matchers to apply
+  -m, --matchers "MATCHER1,MATCHER2,..."        # select matchers to apply
   -o, --output FILE.yaml                        # export replacements suggestions in yaml file
   -d, --display                                 # display registered matchers
   -q, --quiet                                   # silent output in the terminal
   -l, --log FILE.log                            # log file name
-  -f, --input-files "FILE1 ..."                 # files to refactor
+  -f, --input-files "FILE1,FILE2,..."           # files to refactor
   --matcher-args-MATCHER_NAME [MATCHER_ARGS]    # arguments for registered matcher options
   -- [CLANG_FLAGS]                              # optional argument separator
 ```
+
+clang-xform supports more-or-less traditional unix style for the command line options. Comma "," is used as the delimiter for the switches supporting mutiple arguments.
 
 ## -a, --apply FILE.yaml
 
@@ -241,7 +244,7 @@ Specify the replacement file to apply. The extension of the supplied file must b
 
 Number of cores to use. The default is all logical cores. Also, each core will run at least three files. So if there are only two files to refactor, no additional threads will be created.
 
-## -m, --matchers "MATCHER1 ..."
+## -m, --matchers "MATCHER1,MATCHER2,..."
 
 One or more matchers to apply. New matchers can be registered in cpp files under the folder "clang-xform/src/matchers". For example, to create a matcher for function renaming, one can do the following steps.
 
@@ -281,7 +284,7 @@ Setting this switch will silent the log information output in the terminal scree
 
 Specify log file to store logging information. It is an optional switch. By default, "clang-xform.log" in the current working directory is used.
 
-## -f, --input-files "FILE1 ..."
+## -f, --input-files "FILE1,FILE2,..."
 
 One or more files to be refactored. This switch is a positional argument, which means you can directly specifies these files at the end of command line. i.e.
 
