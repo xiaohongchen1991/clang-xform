@@ -5,31 +5,12 @@ os:
   - linux
 matrix:
   include:
-  # work with g++-5
-  - os: linux
+    - os: linux
       env: COMPILER=g++-5
       addons:
         apt:
           packages:
             - g++-5
-          sources:
-            - ubuntu-toolchain-r-test
-  # work with g++-6
-  - os: linux
-      env: COMPILER=g++-6
-      addons:
-        apt:
-          packages:
-            - g++-6
-          sources:
-            - ubuntu-toolchain-r-test
-  # work with g++-7
-  - os: linux
-      env: COMPILER=g++-7
-      addons:
-        apt:
-          packages:
-            - g++-7
           sources:
             - ubuntu-toolchain-r-test
 
