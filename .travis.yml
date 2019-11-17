@@ -1,0 +1,43 @@
+sudo: required
+dist: bionic
+language: cpp
+os:
+  - linux
+matrix:
+  include:
+  # work with g++-5
+  - os: linux
+      env: COMPILER=g++-5
+      addons:
+        apt:
+          packages:
+            - g++-5
+          sources:
+	  - ubuntu-toolchain-r-test
+  # work with g++-6
+  - os: linux
+      env: COMPILER=g++-6
+      addons:
+        apt:
+          packages:
+            - g++-6
+          sources:
+	  - ubuntu-toolchain-r-test
+  # work with g++-7
+  - os: linux
+      env: COMPILER=g++-7
+      addons:
+        apt:
+          packages:
+            - g++-7
+          sources:
+	  - ubuntu-toolchain-r-test
+
+before_script:
+  - wget http://releases.llvm.org/9.0.0/clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz -O /tmp/llvm-9.0.0.tar.xz
+  - tar -C /tmp -xvf /tmp/llvm-9.0.0.tar.xz
+
+script:
+    cmake -DBUILD_TESTS=ON -DCMAKE_CXX_COMPILER=$COMPILER
+    -DLLVM_ROOT=/tmp/llvm-9.0.0
+    && make && make ARGS=--output-on-failure test
