@@ -88,11 +88,11 @@ bool InitTest(const std::string& dirPath,
   FileLog::Verbosity() = verbosity::minimal;
   TrivialLog::Verbosity() = verbosity::quiet;
   // generate compile_commands.json
-  #ifdef LLVM_ROOT
-  if (ExecCmd(root + "/scripts/gen_test_compdb.py -p " + TOSTRING(LLVM_ROOT) + " " + inputFile))
+  #ifdef LLVM_ROOT_PATH
+  if (ExecCmd(root + "/scripts/gen_test_compdb.py -p " + TOSTRING(LLVM_ROOT_PATH) + " " + inputFile))
     return false;
   #else
-  static_assert(false, "Definition for MACRO LLVM_ROOT is not provided");
+  static_assert(false, "Definition for MACRO LLVM_ROOT_PATH is not provided");
   #endif
 
   return true;
