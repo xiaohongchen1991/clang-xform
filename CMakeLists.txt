@@ -23,7 +23,7 @@ endif (NOT DEFINED LLVM_ROOT_PATH)
 get_filename_component(LLVM_ROOT_PATH ${LLVM_ROOT_PATH} ABSOLUTE)
 
 find_package(Clang REQUIRED CONFIG
-  HINTS "${LLVM_ROOT_PATH}/lib/cmake/clang")
+  PATHS "${LLVM_ROOT_PATH}/lib/cmake/clang")
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")

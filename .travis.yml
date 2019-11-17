@@ -19,6 +19,5 @@ before_script:
   - tar -C /tmp -xvf /tmp/llvm-9.0.0.tar.xz
 
 script:
-    cmake -DBUILD_TESTS=ON -DCMAKE_CXX_COMPILER=$COMPILER
-    -DLLVM_ROOT_PATH=/tmp/llvm-9.0.0
+    cmake -DBUILD_TESTS=ON -DCMAKE_CXX_COMPILER=$COMPILER -DLLVM_ROOT_PATH=/tmp/llvm-9.0.0 .
     && make && make ARGS=--output-on-failure test
