@@ -13,7 +13,7 @@ matrix:
           packages:
             - g++-5
           sources:
-	  - ubuntu-toolchain-r-test
+            - ubuntu-toolchain-r-test
   # work with g++-6
   - os: linux
       env: COMPILER=g++-6
@@ -22,7 +22,7 @@ matrix:
           packages:
             - g++-6
           sources:
-	  - ubuntu-toolchain-r-test
+            - ubuntu-toolchain-r-test
   # work with g++-7
   - os: linux
       env: COMPILER=g++-7
@@ -31,7 +31,7 @@ matrix:
           packages:
             - g++-7
           sources:
-	  - ubuntu-toolchain-r-test
+            - ubuntu-toolchain-r-test
 
 before_script:
   - wget http://releases.llvm.org/9.0.0/clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz -O /tmp/llvm-9.0.0.tar.xz
