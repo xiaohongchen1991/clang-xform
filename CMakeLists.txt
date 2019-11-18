@@ -19,16 +19,16 @@ if (NOT DEFINED LLVM_ROOT_PATH)
   "Clang prebuilt binaries are available at http://releases.llvm.org/download.html")
 endif (NOT DEFINED LLVM_ROOT_PATH)
 
-# get absolute path for LLVM_ROOT_PATH
+# get absolute path of LLVM_ROOT_PATH
 get_filename_component(LLVM_ROOT_PATH ${LLVM_ROOT_PATH} ABSOLUTE)
 
-message(STATUS "Finding LLVM in ${LLVM_ROOT_PATH}")
+message(STATUS "Finding Clang in ${LLVM_ROOT_PATH}")
 
 find_package(Clang REQUIRED CONFIG
-  PATHS "${LLVM_ROOT_PATH}/lib/cmake/clang")
+  PATHS "${LLVM_ROOT_PATH}/lib/cmake/clang" NO_DEFAULT_PATH)
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
-message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
+message(STATUS "Using ClangConfig.cmake in: ${LLVM_DIR}")
 
 # configure a header file to pass some of the CMake settings
 # to the source code
