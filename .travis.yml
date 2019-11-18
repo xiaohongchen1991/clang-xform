@@ -15,9 +15,10 @@ matrix:
             - ubuntu-toolchain-r-test
 
 before_script:
-  - wget http://releases.llvm.org/9.0.0/clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz -O /tmp/llvm-9.0.0.tar.xz
-  - tar -C /tmp -xvf /tmp/llvm-9.0.0.tar.xz
+  - wget http://releases.llvm.org/9.0.0/clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz -O /tmp/clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz
+  - tar -C /tmp -xvf /tmp/clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz
 
 script:
-    cmake -DBUILD_TESTS=ON -DCMAKE_CXX_COMPILER=$COMPILER -DLLVM_ROOT_PATH=/tmp/llvm-9.0.0 .
+    cmake -DBUILD_TESTS=ON -DCMAKE_CXX_COMPILER=$COMPILER
+    -DLLVM_ROOT_PATH=/tmp/clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-18.04 .
     && make && make ARGS=--output-on-failure test
