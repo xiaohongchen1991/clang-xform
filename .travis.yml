@@ -20,5 +20,5 @@ before_script:
 
 script:
     cmake -DBUILD_TESTS=ON -DCMAKE_CXX_COMPILER=$COMPILER
-    -DLLVM_ROOT_PATH=/tmp/clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-18.04 .
+    -DLLVM_ROOT=/tmp/clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-18.04 .
     && make && make ARGS=--output-on-failure test

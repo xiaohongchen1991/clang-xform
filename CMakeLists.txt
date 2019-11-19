@@ -13,19 +13,19 @@ message(STATUS "${TOOL} version ${VERSION}")
 
 project(${TOOL} CXX)
 
-if (NOT DEFINED LLVM_ROOT_PATH)
+if (NOT DEFINED LLVM_ROOT)
   message(FATAL_ERROR "Clang 9.0.0 required. Please provide LLVM root path.\n"
-  "Usage: cmake <dir> -DLLVM_ROOT_PATH=<LLVM root path> \n"
+  "Usage: cmake <dir> -DLLVM_ROOT=<LLVM root path> \n"
   "Clang prebuilt binaries are available at http://releases.llvm.org/download.html")
-endif (NOT DEFINED LLVM_ROOT_PATH)
+endif (NOT DEFINED LLVM_ROOT)
 
-# get absolute path of LLVM_ROOT_PATH
-get_filename_component(LLVM_ROOT_PATH ${LLVM_ROOT_PATH} ABSOLUTE)
+# get absolute path of LLVM_ROOT
+get_filename_component(LLVM_ROOT ${LLVM_ROOT} ABSOLUTE)
 
-message(STATUS "Finding Clang in ${LLVM_ROOT_PATH}")
+message(STATUS "Finding Clang in ${LLVM_ROOT}")
 
 find_package(Clang REQUIRED CONFIG
-  PATHS "${LLVM_ROOT_PATH}/lib/cmake/clang" NO_DEFAULT_PATH)
+  PATHS "${LLVM_ROOT}/lib/cmake/clang" NO_DEFAULT_PATH)
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using ClangConfig.cmake in: ${LLVM_DIR}")
@@ -49,10 +49,10 @@ link_directories(${LLVM_LIBRARY_DIRS})
 
 # set compile_options
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  add_definitions(${LLVM_DEFINITIONS} -DCXXOPTS_NO_RTTI -DLLVM_ROOT_PATH="${LLVM_ROOT_PATH}")
+  add_definitions(${LLVM_DEFINITIONS} -DCXXOPTS_NO_RTTI -DLLVM_ROOT="${LLVM_ROOT}")
   add_compile_options(-std=c++14 -fno-rtti)
 else ()
-  add_definitions(${LLVM_DEFINITIONS} /DCXXOPTS_NO_RTTI /DLLVM_ROOT_PATH=${LLVM_ROOT_PATH})
+  add_definitions(${LLVM_DEFINITIONS} /DCXXOPTS_NO_RTTI /DLLVM_ROOT=${LLVM_ROOT})
   add_compile_options(/std:c++14 /GR-)
 endif()
 

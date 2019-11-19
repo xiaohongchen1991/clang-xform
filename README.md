@@ -329,13 +329,13 @@ emacs example.cpp
 2. Generate unit test file and baselines by using the script gen-test.py
 
 ```
-../../../gen-test.py -m RenameFoo -l clang-xform.log -p LLVM_ROOT_PATH example.cpp
+../../../gen-test.py -m RenameFoo -l clang-xform.log -p LLVM_ROOT example.cpp
 ```
 
-This will generate a gtest file named "tRenameFoo.cpp" and two baseline, namely "example.cpp.gold" and "clang-xform.log.gold". Note that the argument "LLVM\_ROOT\_PATH" for the switch "-p, --path" refers to the LLVM library root path. This path will be used to generate compile\_commands.json file for the matcher unit test. If the matcher has its own command line options, swtich "-a, --arguments" is required to supply the arguments in a quoted string. e.g.
+This will generate a gtest file named "tRenameFoo.cpp" and two baseline, namely "example.cpp.gold" and "clang-xform.log.gold". Note that the argument "LLVM\_ROOT" for the switch "-p, --path" refers to the LLVM library root path. This path will be used to generate compile\_commands.json file for the matcher unit test. If the matcher has its own command line options, swtich "-a, --arguments" is required to supply the arguments in a quoted string. e.g.
 
 ```
-../../../gen-test.py -m RenameFcn -l clang-xform.log -p LLVM_ROOT_PATH\
+../../../gen-test.py -m RenameFcn -l clang-xform.log -p LLVM_ROOT\
 -a "--qualified-name Foo --new-name Bar" example.cpp
 ```
 
