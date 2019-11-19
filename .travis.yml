@@ -13,6 +13,23 @@ matrix:
             - g++-5
           sources:
             - ubuntu-toolchain-r-test
+    - os: linux
+      env: COMPILER=g++-6
+      addons:
+        apt:
+          packages:
+            - g++-6
+          sources:
+            - ubuntu-toolchain-r-test
+    - os: linux
+      env: COMPILER=g++-7
+      addons:
+        apt:
+          packages:
+            - g++-7
+          sources:
+            - ubuntu-toolchain-r-test
+
 
 before_script:
   - wget http://releases.llvm.org/9.0.0/clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz -O /tmp/clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz

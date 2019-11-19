@@ -13,6 +13,11 @@ message(STATUS "${TOOL} version ${VERSION}")
 
 project(${TOOL} CXX)
 
+# disable policy CMP0074 warning
+if (POLICY CMP0074)
+  cmake_policy(SET CMP0074 OLD)
+endif()
+
 if (NOT DEFINED LLVM_ROOT)
   message(FATAL_ERROR "Clang 9.0.0 required. Please provide LLVM root path.\n"
   "Usage: cmake <dir> -DLLVM_ROOT=<LLVM root path> \n"
