@@ -41,11 +41,11 @@ using namespace llvm::sys;
 bool CompareFiles(const std::string& p1, const std::string& p2) {
   std::ifstream f1(p1, std::ifstream::binary|std::ifstream::ate);
   std::ifstream f2(p2, std::ifstream::binary|std::ifstream::ate);
-    
+
   if (f1.fail() || f2.fail()) {
     return false; //file problem
   }
-    
+
   if (f1.tellg() != f2.tellg()) {
     return false; //size mismatch
   }
@@ -74,7 +74,7 @@ bool InitTest(const std::string& dirPath,
   fs::real_path(root, tmp_path);
   root = tmp_path.str();
   std::string testdir = root + '/' + dirPath;
-  
+
   // cd to test directory
   fs::set_current_path(testdir);
   // create a new file for output
@@ -99,6 +99,6 @@ bool InitTest(const std::string& dirPath,
 }
 
 bool IsEmptyFile(const std::string& file) {
-  std::ifstream ifs("file");
+  std::ifstream ifs(file);
   return ifs.peek() == std::ifstream::traits_type::eof();
 }
