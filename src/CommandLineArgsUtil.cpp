@@ -27,8 +27,8 @@
 #include <algorithm>
 #include <cstring>
 
-std::vector<const char*> StripMatcherArgs(int& argc, const char* const * argv) {
-  std::vector<const char*> strippedArgs;
+std::vector<std::string> StripMatcherArgs(int& argc, const char* const * argv) {
+  std::vector<std::string> strippedArgs;
 
   if (argc == 0) {
     return strippedArgs;
@@ -48,26 +48,26 @@ std::vector<const char*> StripMatcherArgs(int& argc, const char* const * argv) {
   return strippedArgs;
 }
 
-std::vector<const char*> GetMatcherArgs(const std::vector<const char*>& args,
-                                        const std::string& id) {
-  std::vector<const char*> strippedArgs;
+std::vector<std::vector<std::string> > GetMatcherArgs(const std::vector<std::string>& args,
+                                                      const std::string& id) {
+  std::vector<std::vector<std::string> > strippedArgs;
   if (args.empty()) {
     return strippedArgs;
   }
 
-  auto begin = std::find_if(args.begin(), args.end(),
-                            [&id](auto str){return (strstr(str, ("--matcher-args-" + id).c_str()) != nullptr);});
-
-  if (begin == args.end()) {
-    return strippedArgs;
+  auto begin = args.begin();
+  while (begin != args.end()) {
+    begin = std::find_if(begin, args.end(),
+                         [&id](const std::string& str){return str.find("--matcher-args-" + id) != std::string::npos;});
+    if (begin != args.end()) {
+      auto end = std::find_if(begin + 1, args.end(),
+                              [](const std::string& str){return str.find("--matcher-args-") != std::string::npos;});
+      // the first arg will de discarded in cxxopt
+      strippedArgs.emplace_back(begin, end);
+      // update begin iterator
+      begin = end;
+    }
   }
-
-  auto end = std::find_if(begin + 1, args.end(),
-                          [](auto str){return (strstr(str, "--matcher-args-") != nullptr);});
-
-  // the first arg will de discarded in cxxopt
-  strippedArgs.reserve(end - begin);
-  strippedArgs.insert(strippedArgs.end(), begin, end);
 
   return strippedArgs;
 }

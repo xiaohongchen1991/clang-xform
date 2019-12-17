@@ -63,10 +63,11 @@ CommandLineArgs ProcessCommandLine(int argc, char**argv);
 
 // update command line arguments
 // return true if adjusted
-bool AdjustCommandLineArgs(CommandLineArgs& args);
+bool AdjustCommandLineArgs(CommandLineArgs& args, std::vector<std::string>& matcherArgs);
 
 // validate given command line arguments
 // return false if invalid arguments exist and set error message
-bool ValidateCommandLineArgs(const CommandLineArgs& args, bool hasClangFlags, std::string& errmsg);
+bool ValidateCommandLineArgs(const CommandLineArgs& args, const std::vector<std::string>& matcherArgs,
+                             bool hasClangFlags, std::string& errmsg);
 
 #endif // COMMAND_LINE_ARGS_HPP

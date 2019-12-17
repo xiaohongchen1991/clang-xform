@@ -36,7 +36,7 @@ TEST(MatcherTest, __NAME__) {
   std::string baselineFile = inputFile + ".gold";
   std::string baselineLog = logFile + ".gold";
   std::vector<std::string> matchers = {"__NAME__"};
-  std::vector<const char*> args = {__ARGS__};
+  std::vector<std::string> args = {__ARGS__};
 
   // retrieve compliation database
   std::string errMsg;

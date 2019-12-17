@@ -107,12 +107,12 @@ CommandLineArgs ProcessCommandLine(int argc, char**argv)
   return args;
 }
 
-bool AdjustCommandLineArgs(CommandLineArgs& args) {
+bool AdjustCommandLineArgs(CommandLineArgs& args, std::vector<std::string>& matcherArgs) {
   // if cfg file is specified, read the flags and adjust args
   if (args.configFile.empty()) {
     return false;
   }
-    
+
   std::vector<std::string> extraMatchers = ParseConfigFile(args.configFile, "matchers");
   std::vector<std::string> extraInputFiles = ParseConfigFile(args.configFile, "input-files");
   args.matchers.insert(args.matchers.end(),
@@ -122,14 +122,26 @@ bool AdjustCommandLineArgs(CommandLineArgs& args) {
                          std::make_move_iterator(extraInputFiles.begin()),
                          std::make_move_iterator(extraInputFiles.end()));
 
+  // get matcher arguments
+  std::vector<std::string> extraMatcherArgs = ParseConfigFileForMatcherArgs(args.configFile);
+  matcherArgs.insert(matcherArgs.end(),
+                     std::make_move_iterator(extraMatcherArgs.begin()),
+                     std::make_move_iterator(extraMatcherArgs.end()));
+
   return true;
 }
 
-bool ValidateCommandLineArgs(const CommandLineArgs& args, bool hasClangFlags, std::string& errmsg) {
+bool ValidateCommandLineArgs(const CommandLineArgs& args, const std::vector<std::string>& matcherArgs,
+                             bool hasClangFlags, std::string& errmsg) {
   // validate flags
   // Flags --compile-commands and -- [CLANG_FLAGS] are mutually exclusive
   if ((!args.compileCommands.empty() + hasClangFlags) > 1) {
     errmsg = "Options --compile-commands and -- [CLANG_FLAGS] are mutually exclusive!";
+    return false;
+  }
+  // arguments for --matchers should not be empty if --input-files is set
+  if ((!args.inputFiles.empty()) && args.matchers.empty()) {
+    errmsg = "No matcher is provided";
     return false;
   }
   int flagsum = !args.compileCommands.empty()
@@ -164,6 +176,25 @@ bool ValidateCommandLineArgs(const CommandLineArgs& args, bool hasClangFlags, st
       // matcher id does not exist
       errmsg = "Matcher ID: " + matcher + " is not registered!";
       return false;
+    }
+  }
+
+  // matcher arguments should matcher registered matchers
+  auto begin = matcherArgs.begin();
+  std::string sepPrefix = "--matcher-args-";
+  while (begin != matcherArgs.end()) {
+    begin = std::find_if(begin, matcherArgs.end(),
+                         [&sepPrefix](const std::string& str)
+                         {return str.find(sepPrefix) != std::string::npos;});
+    if (begin != matcherArgs.end()) {
+      auto matcher = begin->substr(sepPrefix.size(), begin->size() - sepPrefix.size());
+      if (std::find(args.matchers.begin(),
+                    args.matchers.end(),
+                    matcher) == args.matchers.end()) {
+        errmsg = "Arguments are provided for a non-selected matcher " + matcher;
+        return false;
+      }
+      ++begin;
     }
   }
 

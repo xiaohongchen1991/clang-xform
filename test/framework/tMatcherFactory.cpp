@@ -30,7 +30,7 @@
 namespace {
 std::unique_ptr<MatchCallbackBase> CreateMockMatchCallback(const std::string& id,
                                                            clang::tooling::Replacements& replacements,
-                                                           std::vector<const char*> args) {
+                                                           std::vector<std::string> args) {
   return std::make_unique<MockMatchCallback>(id, replacements, std::move(args));
 }
 } // end of anonymous namespace
@@ -41,7 +41,7 @@ TEST(MatcherFactoryTest, CreateMatchCallback) {
   // register new matcher
   factory.RegisterMatchCallback(id, CreateMockMatchCallback);
   clang::tooling::Replacements replacements;
-  std::vector<const char*> args;
+  std::vector<std::string> args;
   // create MatchCallback
   EXPECT_TRUE(factory.CreateMatchCallback(id, replacements, args));
   EXPECT_FALSE(factory.CreateMatchCallback("not_registered", replacements, args));

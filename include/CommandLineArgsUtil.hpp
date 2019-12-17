@@ -29,10 +29,10 @@
 #include <string>
 
 // Strip matcher arguments from command line options
-std::vector<const char*> StripMatcherArgs(int& argc, const char* const * argv);
+std::vector<std::string> StripMatcherArgs(int& argc, const char* const * argv);
 
 // Retrieve matcher arguments for a given matcher
-std::vector<const char*> GetMatcherArgs(const std::vector<const char*>& args,
-                                        const std::string& id);
+std::vector<std::vector<std::string> > GetMatcherArgs(const std::vector<std::string>& args,
+                                                      const std::string& id);
 
 #endif

@@ -43,7 +43,7 @@ class MatcherFactory {
  public:
   typedef std::unique_ptr<MatchCallbackBase> (*CreateCallbackFunction)(const std::string&,
                                                                        clang::tooling::Replacements&,
-                                                                       std::vector<const char*>);
+                                                                       std::vector<std::string>);
   typedef std::map<std::string, CreateCallbackFunction> MatcherMap;
 
   MatcherFactory(const MatcherFactory&) = delete;
@@ -62,7 +62,7 @@ class MatcherFactory {
   std::unique_ptr<MatchCallbackBase>
   CreateMatchCallback(const std::string& id,
                       clang::tooling::Replacements& replacements,
-                      std::vector<const char*> args) const {
+                      std::vector<std::string> args) const {
     auto iter = matcher_map_.find(id);
     if (iter == matcher_map_.end()) {
       return nullptr;

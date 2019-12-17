@@ -52,11 +52,14 @@ inline int ExecCmd(const std::string& cmd) {
 // return true if succeed
 std::vector<std::string> ParseConfigFile(const std::string& fileName, const std::string& key);
 
+// retrieve all matcher arguments from the given config file
+std::vector<std::string> ParseConfigFileForMatcherArgs(const std::string& fileName);
+
 int ProcessFiles(const clang::tooling::CompilationDatabase& compilationDatabase,
                  const std::vector<std::string>& inputFiles,
                  const std::string& outputFile,
                  const std::vector<std::string>& matchers,
-                 const std::vector<const char*>& matcherArgs,
+                 const std::vector<std::string>& matcherArgs,
                  unsigned int numThreads);
 
 #endif

@@ -31,23 +31,19 @@ TEST(CommandLineArgsUtilTest, StripMatcherArgs) {
   int argc = 8;
   const char* argv[] = {"test", "-a", "2", "--matcher-args-m1", "--abc",
                         "1", "--matcher-args-m2", "-a"};
-  std::vector<const char*> strippedArgs = StripMatcherArgs(argc, argv);
+  std::vector<std::string> strippedArgs = StripMatcherArgs(argc, argv);
   // After stripping, args become: test -a 2
   // argc should be 3
   EXPECT_EQ(argc, 3);
-  constexpr int strippedArgc = 5;
-  const char* baseline[strippedArgc] = {"--matcher-args-m1", "--abc", "1", "--matcher-args-m2", "-a"};
-  ASSERT_EQ(strippedArgs.size(), strippedArgc);
-  for (int i = 0; i < strippedArgc; ++i) {
-    EXPECT_TRUE(!strcmp(strippedArgs[i], baseline[i]));
-  }
+  std::vector<std::string> baseline = {"--matcher-args-m1", "--abc", "1", "--matcher-args-m2", "-a"};
+  EXPECT_EQ(strippedArgs, baseline);
 }
 
 TEST(CommandLineArgsUtilTest, StripMatcherArgs_Empty) {
   // args: test -a 2 --bb 3
   int argc = 5;
   const char* argv[] = {"test", "-a", "2", "--bb", "3"};
-  std::vector<const char*> strippedArgs = StripMatcherArgs(argc, argv);
+  std::vector<std::string> strippedArgs = StripMatcherArgs(argc, argv);
   // After stripping, args remainds the same
   // argc should be 5
   EXPECT_EQ(argc, 5);
@@ -57,14 +53,25 @@ TEST(CommandLineArgsUtilTest, StripMatcherArgs_Empty) {
 TEST(CommandLineArgsUtilTest, GetMatcherArgs) {
   // args: --matcher-args-m1 --abc 1 --matcher-args-m2 -a
   int argc = 5;
-  std::vector<const char*> args = {"--matcher-args-m1", "--abc", "1", "--matcher-args-m2", "-a"};
+  std::vector<std::string> args = {"--matcher-args-m1", "--abc", "1", "--matcher-args-m2", "-a"};
   std::string matcherID = "m1";
-  std::vector<const char*> matcherArgs = GetMatcherArgs(args, matcherID);
-  std::vector<const char*> baseline = {"--matcher-args-m1", "--abc", "1"};
-  ASSERT_EQ(matcherArgs.size(), baseline.size());
-  for (int i = 0; i < baseline.size(); ++i) {
-    EXPECT_TRUE(!strcmp(matcherArgs[i], baseline[i]));
-  }
-  std::vector<const char*> emptyArgs = GetMatcherArgs(args, "m3");
+  std::vector<std::vector<std::string> > matcherArgs = GetMatcherArgs(args, matcherID);
+  std::vector<std::string> baseline = {"--matcher-args-m1", "--abc", "1"};
+  ASSERT_EQ(matcherArgs.size(), 1);
+  EXPECT_EQ(matcherArgs[0], baseline);
+  std::vector<std::vector<std::string> > emptyArgs = GetMatcherArgs(args, "m3");
   EXPECT_TRUE(emptyArgs.empty());
+}
+
+TEST(CommandLineArgsUtilTest, GetMatcherArgs_MultipleConfig) {
+  // args: --matcher-args-m --abc 1 --matcher-args-m --ab 2
+  int argc = 6;
+  std::vector<std::string> args = {"--matcher-args-m", "--abc", "1", "--matcher-args-m", "--ab", "2"};
+  std::string matcherID = "m";
+  std::vector<std::vector<std::string> > matcherArgs = GetMatcherArgs(args, matcherID);
+  std::vector<std::string> baseline1 = {"--matcher-args-m", "--abc", "1"};
+  std::vector<std::string> baseline2 = {"--matcher-args-m", "--ab", "2"};
+  ASSERT_EQ(matcherArgs.size(), 2);
+  EXPECT_EQ(matcherArgs[0], baseline1);
+  EXPECT_EQ(matcherArgs[1], baseline2);
 }

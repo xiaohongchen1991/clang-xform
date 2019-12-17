@@ -32,7 +32,7 @@ class NAME : public MatchCallbackBase {                                         
   public :                                                                                  \
     explicit NAME (const std::string& id,                                                   \
                    clang::tooling::Replacements& replacements,                              \
-                   std::vector<const char*> args)                                           \
+                   std::vector<std::string> args)                                           \
         : MatchCallbackBase(id, replacements, std::move(args))                              \
     {}                                                                                      \
     virtual void run(const clang::ast_matchers::MatchFinder::MatchResult &Result) override; \
@@ -44,7 +44,7 @@ class NAME : public MatchCallbackBase {                                         
   public :                                                                                  \
     explicit NAME (const std::string& id,                                                   \
                    clang::tooling::Replacements& replacements,                              \
-                   std::vector<const char*> args)                                           \
+                   std::vector<std::string> args)                                           \
         : MatchCallbackBase(id, replacements, std::move(args))                              \
     {}                                                                                      \
     virtual void run(const clang::ast_matchers::MatchFinder::MatchResult &Result) override; \

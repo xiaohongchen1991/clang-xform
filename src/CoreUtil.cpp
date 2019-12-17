@@ -80,7 +80,7 @@ std::vector<std::string> ParseConfigFile(const std::string& fileName, const std:
   std::ifstream ifs(fileName);
   std::string line;
   std::vector<std::string> args;
-    
+
   if (ifs.good()) {
     while (std::getline(ifs, line)) {
       std::istringstream is_line(line);
@@ -105,11 +105,43 @@ std::vector<std::string> ParseConfigFile(const std::string& fileName, const std:
   return args;
 }
 
+std::vector<std::string> ParseConfigFileForMatcherArgs(const std::string& fileName)
+{
+  // open file for reading
+  std::ifstream ifs(fileName);
+  std::string line;
+  std::vector<std::string> args;
+    
+  if (ifs.good()) {
+    while (std::getline(ifs, line)) {
+      std::istringstream is_line(line);
+      std::string next_key;
+      if (std::getline(is_line, next_key, ' ')) {
+        std::string sep = "matcher-args-";
+        if (next_key.substr(0, sep.size()) != sep) continue;
+        // append "--" in front of "matcher-args-*"
+        args.push_back("--" + next_key);
+        std::string value;
+        while (std::getline(is_line, value, ' ')) {
+          if (value.empty()) {
+            continue;
+          }
+          value = RemoveWhitespace(value);
+          args.push_back(std::move(value));
+        }
+      }
+    }
+  } else {
+    throw FileSystemException("Cannot open file: " + fileName);
+  }
+  return args;
+}
+
 int ProcessFiles(const CompilationDatabase& compilationDatabase,
                  const std::vector<std::string>& inputFiles,
                  const std::string& outputFile,
                  const std::vector<std::string>& matchers,
-                 const std::vector<const char*>& matcherArgs,
+                 const std::vector<std::string>& matcherArgs,
                  unsigned int numThreads)
 {
   // We are trying to achieve a balance between two competing efficiency sources:

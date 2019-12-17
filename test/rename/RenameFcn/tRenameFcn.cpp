@@ -36,7 +36,7 @@ TEST(MatcherTest, RenameFcn) {
   std::string baselineFile = inputFile + ".gold";
   std::string baselineLog = logFile + ".gold";
   std::vector<std::string> matchers = {"RenameFcn"};
-  std::vector<const char*> args = {"--matcher-args-RenameFcn", "--qualified-name", "Foo", "--new-name", "Bar"};
+  std::vector<std::string> args = {"--matcher-args-RenameFcn", "--qualified-name", "Foo", "--new-name", "Bar"};
 
   // retrieve compliation database
   std::string errMsg;

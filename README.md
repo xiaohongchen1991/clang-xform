@@ -213,7 +213,32 @@ bin/clang-xform -m RenameFcn -o output.yaml -f test/rename/RenameFcn/example.cpp
 --matcher-args-RenameFcn --qualified-name Foo --new-name Bar
 ```
 
-Note that, in this case, input-files argument can not be positional when using with matcher arguments. Here "--matcher-args-RenameFcn" is a separator used to tell parser that the arguments after it and before the end or the next separator are used for matcher RenameFcn. For more information, see [Switches and arguments](#switches-and-arguments).
+Note that, in this case, input-files argument can not be positional when using with matcher arguments. Here "--matcher-args-RenameFcn" is a separator used to tell parser that the arguments after it and before the end or the next separator are used for matcher RenameFcn. 
+
+One can also initialize multiple instances of the same matcher with different groups of command arguments. For example,
+
+```
+cd INSTALL_DIR/clang-xform
+bin/clang-xform -m RenameFcn -o output.yaml -f test/rename/RenameFcn/example.cpp \
+--matcher-args-RenameFcn --qualified-name Foo --new-name NewFoo \
+--matcher-args-RenameFcn --qualified-name Bar --new-name NewBar
+```
+
+For convenience, we can save this configuration in a file and the above command will be equivalent as
+
+```
+cd INSTALL_DIR/clang-xform
+bin/clang-xform -e config.cfg -o output.yaml
+
+config.cfg    # config file specifying matchers and input files
+--------------
+input-files = test/rename/RenameFcn/example.cpp
+matchers = RenameFcn
+matcher-args-RenameFcn --qualified-name Foo --new-name NewFoo
+matcher-args-RenameFcn --qualified-name Bar --new-name NewBar
+```
+
+For more information, see [Switches and arguments](#switches-and-arguments).
 
 9. Writing a unit test for each new added matcher is recommended. A unit test framework is set up for the users to easily add their tests. For more information, see [Testing](#testing).
 
@@ -224,6 +249,7 @@ sbcodexform
   -h, --help                                    # produce help message
   -v, --version                                 # print out version number
   -a, --apply FILE.yaml                         # apply replacements
+  -e, --config FILE.cfg                         # config file to read
   -j, --num-threads N                           # number of threads, default all cores
   -p, --compile-commands compile_commands.json  # read compile commands for clang
   -m, --matchers "MATCHER1,MATCHER2,..."        # select matchers to apply
@@ -241,6 +267,31 @@ clang-xform supports more-or-less traditional unix style for the command line op
 ## -a, --apply FILE.yaml
 
 Specify the replacement file to apply. The extension of the supplied file must be yaml.
+
+## -e, --config FILE.cfg
+
+Refactor files using the specified matchers listed in the given config file "FILE.cfg". Right now, only configurations for input files, matchers, and matcher arguments are supported. Two formats are allowed:
+
+Specify multiple arguments in one line seperated by either space " " or comma ",":
+
+```
+files.cfg   # config file specifying files to refactor
+--------------
+input-files = FILE1 FILE2
+matchers = RenameFcn, RenameVar
+```
+
+Specify arguments in multiple lines
+
+```
+files.cfg   # config file specifying files to refactor
+--------------
+input-files = FILE1
+input-files = FILE2
+matchers = RenameFcn
+matcher-args-RenameFcn --qualified-name Foo --new-name NewFoo
+matcher-args-RenameFcn --qualified-name=Bar --new-name=NewBar
+```
 
 ## -j, --num-threads N
 
@@ -303,6 +354,8 @@ clang-xform -m RenameFcn -p compile_commands.json -f File
 ## --matcher-args-MATCHER\_NAME [MATCHER\_ARGS]
 
 Optional arguments for registered matcher options. Here "--matcher-args-Matcher_Name" serves as a separator to tell the parser that the arguments after it and before the next separator are used for the matcher with the given name. This switch has to be used at the end of command line or before "--" if "--" is used for supplying Clang flags.
+
+Different settings of arguments can be used to initialize mutiple instances of the same matcher. See the example in [Quick tutorial](#quick-tutorial).
 
 ## -- [CLANG\_FLAGS]
 

@@ -46,7 +46,7 @@ class CodeXformAction : public clang::ASTFrontendAction
  public:
   explicit CodeXformAction(const std::string& outputFile,
                            const std::vector<std::string>& ids,
-                           const std::vector<const char*>& args);
+                           const std::vector<std::string>& args);
 
  protected:
   virtual std::unique_ptr<clang::ASTConsumer>

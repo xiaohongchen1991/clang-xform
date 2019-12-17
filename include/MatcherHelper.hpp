@@ -38,7 +38,7 @@ class MatcherHelper {
   }
   static std::unique_ptr<MatchCallbackBase> CreateMatchCallback(const std::string& id,
                                                                 clang::tooling::Replacements& replacements,
-                                                                std::vector<const char*> args) {
+                                                                std::vector<std::string> args) {
     return std::make_unique<Callback>(id, replacements, std::move(args));
   }
 };

@@ -38,7 +38,7 @@ class MatchCallbackBase : public clang::ast_matchers::MatchFinder::MatchCallback
  public :
   explicit MatchCallbackBase(const std::string& id,
                              clang::tooling::Replacements& replacements,
-                             std::vector<const char*> args)
+                             std::vector<std::string> args)
       : mOptions(id), mReplacements(replacements), mArgs(std::move(args))
   {
     if (!mArgs.empty() && (("--matcher-args-" + id) != mArgs[0])) {
@@ -109,7 +109,12 @@ class MatchCallbackBase : public clang::ast_matchers::MatchFinder::MatchCallback
   virtual void ParseOptions() {
     if (!mArgs.empty()) {
       int argc = static_cast<int>(mArgs.size());
-      char** argv = const_cast<char**>(&mArgs[0]);
+      std::vector<char*> cstrArgs;
+      cstrArgs.reserve(argc);
+      for (auto& s : mArgs) {
+        cstrArgs.push_back(const_cast<char*>(s.c_str()));
+      }
+      char** argv = &cstrArgs[0];
       mResult = std::make_unique<cxxopts::ParseResult>(mOptions.parse(argc, argv));
     }
   }
@@ -147,7 +152,7 @@ class MatchCallbackBase : public clang::ast_matchers::MatchFinder::MatchCallback
   // Use heap memory for now. May switch to std::optional if c++17 is supported
   std::unique_ptr<cxxopts::ParseResult> mResult;
   std::reference_wrapper<clang::tooling::Replacements> mReplacements;
-  std::vector<const char*> mArgs;
+  std::vector<std::string> mArgs;
 };
 
 #endif

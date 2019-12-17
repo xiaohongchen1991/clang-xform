@@ -34,7 +34,7 @@ class MatchCallbackForTest : public MatchCallbackBase {
  public:
   explicit MatchCallbackForTest(const std::string& id,
                                 clang::tooling::Replacements& replacements,
-                                std::vector<const char*> args)
+                                std::vector<std::string> args)
       : MatchCallbackBase(id, replacements, std::move(args))
   {}
 
@@ -83,14 +83,14 @@ class MatchCallbackBaseTest : public ::testing::Test {
 
 TEST_F(MatchCallbackBaseTest, AddAndGetOption) {
   // "--matcher-args-Test --key1 value1 --key2 value2"
-  std::vector<const char*> args(5);
+  std::vector<std::string> args(5);
   std::string keyArg1 = "--" + key1;
   std::string keyArg2 = "--" + key2;
-  args[0] = sep.c_str();
-  args[1] = keyArg1.c_str();
-  args[2] = value1.c_str();
-  args[3] = keyArg2.c_str();
-  args[4] = value2.c_str();
+  args[0] = sep;
+  args[1] = keyArg1;
+  args[2] = value1;
+  args[3] = keyArg2;
+  args[4] = value2;
   MatchCallbackForTest matchCallback(matcherName, replacements, args);
   matchCallback.AddOption<std::string>(key1);
   matchCallback.AddOption<std::string>(key2);
@@ -102,11 +102,11 @@ TEST_F(MatchCallbackBaseTest, AddAndGetOption) {
 
 TEST_F(MatchCallbackBaseTest, AddDefaultOption) {
   // "--matcher-args-Test --key1 value1"
-  std::vector<const char*> args(3);
+  std::vector<std::string> args(3);
   std::string keyArg1 = "--" + key1;
-  args[0] = sep.c_str();
-  args[1] = keyArg1.c_str();
-  args[2] = value1.c_str();
+  args[0] = sep;
+  args[1] = keyArg1;
+  args[2] = value1;
   MatchCallbackForTest matchCallback(matcherName, replacements, args);
   matchCallback.AddOption<std::string>(key1);
   matchCallback.AddOption<std::string>(key2, value2);
@@ -118,24 +118,24 @@ TEST_F(MatchCallbackBaseTest, AddDefaultOption) {
 
 TEST_F(MatchCallbackBaseTest, MissingArgumentSeparator) {
   // "--key1 value1 --key2 value2"
-  std::vector<const char*> args(4);
+  std::vector<std::string> args(4);
   std::string keyArg1 = "--" + key1;
   std::string keyArg2 = "--" + key2;
-  args[0] = keyArg1.c_str();
-  args[1] = value1.c_str();
-  args[2] = keyArg2.c_str();
-  args[3] = value2.c_str();
+  args[0] = keyArg1;
+  args[1] = value1;
+  args[2] = keyArg2;
+  args[3] = value2;
   EXPECT_THROW(MatchCallbackForTest(matcherName, replacements, args),
                CommandLineOptionException);
 }
 
 TEST_F(MatchCallbackBaseTest, OptionNotPresent) {
   // "--matcher-args-Test --key1 value1"
-  std::vector<const char*> args(3);
+  std::vector<std::string> args(3);
   std::string keyArg1 = "--" + key1;
-  args[0] = sep.c_str();
-  args[1] = keyArg1.c_str();
-  args[2] = value1.c_str();
+  args[0] = sep;
+  args[1] = keyArg1;
+  args[2] = value1;
   MatchCallbackForTest matchCallback(matcherName, replacements, args);
   matchCallback.AddOption<std::string>(key1);
   matchCallback.ParseOptions();
@@ -146,14 +146,14 @@ TEST_F(MatchCallbackBaseTest, OptionNotPresent) {
 
 TEST_F(MatchCallbackBaseTest, OptionNotExist) {
   // "--matcher-args-Test --key1 value1 --key2 value2"
-  std::vector<const char*> args(5);
+  std::vector<std::string> args(5);
   std::string keyArg1 = "--" + key1;
   std::string keyArg2 = "--" + key2;
-  args[0] = sep.c_str();
-  args[1] = keyArg1.c_str();
-  args[2] = value1.c_str();
-  args[3] = keyArg2.c_str();
-  args[4] = value2.c_str();
+  args[0] = sep;
+  args[1] = keyArg1;
+  args[2] = value1;
+  args[3] = keyArg2;
+  args[4] = value2;
   MatchCallbackForTest matchCallback(matcherName, replacements, args);
   matchCallback.AddOption<std::string>(key1);
   EXPECT_THROW(matchCallback.ParseOptions(),
@@ -162,7 +162,7 @@ TEST_F(MatchCallbackBaseTest, OptionNotExist) {
 
 TEST_F(MatchCallbackBaseTest, RegisterOrder) {
   clang::ast_matchers::MatchFinder* finder = nullptr;
-  std::vector<const char*> args;
+  std::vector<std::string> args;
   MockMatchCallback matchCallback(matcherName, replacements, args);
 
   {

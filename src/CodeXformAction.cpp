@@ -48,17 +48,30 @@ std::mutex CodeXformAction::mMutex;
 
 CodeXformAction::CodeXformAction(const std::string& outputFile,
                                  const std::vector<std::string>& ids,
-                                 const std::vector<const char*>& args)
+                                 const std::vector<std::string>& args)
     : mOutputFile(outputFile)
 {
   // register command line options for each MatchCallback
   MatcherFactory& factory = MatcherFactory::Instance();
   for (const auto& id : ids) {
-    mCallbacks.push_back(factory.CreateMatchCallback(id, mReplacements,
-                                                     GetMatcherArgs(args, id)));
-    assert(mCallbacks.back());
-    // register command line options and matchers
-    mCallbacks.back()->Register(&mFinder);
+    auto matcher_args = GetMatcherArgs(args, id);
+    if (matcher_args.empty()) {
+      // matcher has no arguments
+      mCallbacks.push_back(factory.CreateMatchCallback(id, mReplacements,
+                                                       std::vector<std::string>()));
+      assert(mCallbacks.back());
+      // register command line options and matchers
+      mCallbacks.back()->Register(&mFinder);
+    } else {
+      // create multiple instances of the given matcher with different arguments setting
+      for (auto& args : matcher_args) {
+        mCallbacks.push_back(factory.CreateMatchCallback(id, mReplacements,
+                                                         std::move(args)));
+        assert(mCallbacks.back());
+        // register command line options and matchers
+        mCallbacks.back()->Register(&mFinder);
+      }
+    }
   }
 }
 

@@ -29,54 +29,156 @@
 
 #include "gtest/gtest.h"
 
-TEST(CommandLineArgsTest, AdjustCommandLineArgs) {
+TEST(CommandLineArgsTest, AdjustCommandLineArgs_NonMatcherArgs) {
   CommandLineArgs args;
   args.matchers.push_back("m1");
   args.inputFiles.push_back("f1");
   args.configFile = "tmp.cfg";
+  std::vector<std::string> matcherArgs;
   std::ofstream ofs(args.configFile);
   ofs << "matchers =m2\n"
       << "input-files= f2";
   ofs.close();
-  AdjustCommandLineArgs(args);
+  AdjustCommandLineArgs(args, matcherArgs);
   // remove tmp config file
   remove(args.configFile.c_str());
   std::vector<std::string> bmatchers = {"m1", "m2"};
   std::vector<std::string> bfiles = {"f1", "f2"};
+
   EXPECT_EQ(args.matchers, bmatchers);
   EXPECT_EQ(args.inputFiles, bfiles);
+  EXPECT_TRUE(matcherArgs.empty());
 }
 
-TEST(CommandLineArgsTest, ValidateCommandLineArgs) {
-  // 1. test mutually exclusive flags
+TEST(CommandLineArgsTest, AdjustCommandLineArgs_MatcherArgs) {
+  CommandLineArgs args;
+  args.configFile = "tmp.cfg";
+  std::vector<std::string> matcherArgs = {"--matcher-args-m1", "--bc", "3"};
+  std::ofstream ofs(args.configFile);
+  ofs << "matcher-args-m2 --abc 2\n"
+      << "matcher-args-m2 --ab 1";
+  ofs.close();
+  AdjustCommandLineArgs(args, matcherArgs);
+  // remove tmp config file
+  remove(args.configFile.c_str());
+  std::vector<std::string> bmatcherArgs = {"--matcher-args-m1", "--bc", "3",
+                                           "--matcher-args-m2", "--abc", "2",
+                                           "--matcher-args-m2", "--ab", "1"};
+  EXPECT_TRUE(args.matchers.empty());
+  EXPECT_TRUE(args.inputFiles.empty());
+  EXPECT_EQ(matcherArgs, bmatcherArgs);
+}
+
+TEST(CommandLineArgsTest, ValidateCommandLineArgs_InputFilesWithMatchers) {
+  // test --components flag
   std::string errmsg;
-  // args1: sbcodexform --compile-commands compdb.json --
-  constexpr int argc1 = 3;
-  const char* argv1[argc1] = {"sbcodexform", "--compile-commands", "compdb.json"};
-  auto args1 = ProcessCommandLine(argc1, const_cast<char**>(argv1));
-  EXPECT_FALSE(ValidateCommandLineArgs(args1, true, errmsg));
-  // args2: sbcodexform --apply output.yaml -d
-  constexpr int argc2 = 4;
-  const char* argv2[argc2] = {"sbcodexform", "--apply", "output.yaml", "-d"};
-  auto args2 = ProcessCommandLine(argc2, const_cast<char**>(argv2));
-  EXPECT_FALSE(ValidateCommandLineArgs(args2, false, errmsg));
+  constexpr int argc = 6;
+  // args: clang_xform --input-files f1 f2 -m RenameFcn \
+  // --matcher-args-RenameFcn --qualified-name Foo --new-name Bar
+  const char* argv[argc] = {"clang_xform", "--input-files", "f1", "f2", "-m", "RenameFcn"};
+  auto args = ProcessCommandLine(argc, const_cast<char**>(argv));
+  std::vector<std::string> matcherArgs = {"--matcher-args-RenameFcn", "--qualified-name", "Foo",
+                                          "--new-name", "Bar"};
+  EXPECT_TRUE(ValidateCommandLineArgs(args, matcherArgs, false, errmsg));
+}
 
-  // 2. test yaml file extensions
-  // args5: sbcodexform -a output.xml
-  constexpr int argc3 = 3;
-  const char* argv3[argc3] = {"sbcodexform", "-a", "output.xml"};
-  auto args3 = ProcessCommandLine(argc3, const_cast<char**>(argv3));
-  EXPECT_FALSE(ValidateCommandLineArgs(args3, false, errmsg));
-  // args4: sbcodexform --output output -p compile_commands.json
-  constexpr int argc4 = 5;
-  const char* argv4[argc4] = {"sbcodexform", "--output", "output", "-p", "compile_commands.json"};
-  auto args4 = ProcessCommandLine(argc4, const_cast<char**>(argv4));
-  EXPECT_FALSE(ValidateCommandLineArgs(args4, false, errmsg));
+TEST(CommandLineArgsTest, ValidateCommandLineArgs_Apply) {
+  // test --apply flag
+  std::string errmsg;
+  constexpr int argc = 3;
+  // args: clang_xform -a output.yaml
+  const char* argv[argc] = {"clang_xform", "-a", "output.yaml"};
+  auto args = ProcessCommandLine(argc, const_cast<char**>(argv));
+  EXPECT_TRUE(ValidateCommandLineArgs(args, std::vector<std::string>(), false, errmsg));
+}
 
-  // 3. test unregisted matcher
-  // args5: sbcodexform -p compile_commands.json --matchers m1
-  constexpr int argc5 = 5;
-  const char* argv5[argc5] = {"sbcodexform", "-p", "compile_commands.json", "--matchers", "m1"};
-  auto args5 = ProcessCommandLine(argc5, const_cast<char**>(argv5));
-  EXPECT_FALSE(ValidateCommandLineArgs(args5, false, errmsg));
+TEST(CommandLineArgsTest, ValidateCommandLineArgs_Display) {
+  // test --display flag
+  std::string errmsg;
+  constexpr int argc = 2;
+  // args: clang_xform -d
+  const char* argv[argc] = {"clang_xform", "-d"};
+  auto args = ProcessCommandLine(argc, const_cast<char**>(argv));
+  EXPECT_TRUE(ValidateCommandLineArgs(args, std::vector<std::string>(), false, errmsg));
+}
+
+TEST(CommandLineArgsTest, ValidateCommandLineArgs_CompDBWithClangFlags) {
+  // test mutually exclusive flags between --compile-commands and clang flags
+  std::string errmsg;
+  constexpr int argc = 3;
+  // args: clang_xform --compile-commands compdb.json --
+  const char* argv[argc] = {"clang_xform", "--compile-commands", "compdb.json"};
+  auto args = ProcessCommandLine(argc, const_cast<char**>(argv));
+  EXPECT_FALSE(ValidateCommandLineArgs(args, std::vector<std::string>(), true, errmsg));
+}
+
+TEST(CommandLineArgsTest, ValidateCommandLineArgs_DisplayWithOtherFlags) {
+  // test mutually exclusive flags between --display and all the others
+  std::string errmsg;
+  constexpr int argc = 4;
+  // args: clang_xform --display --input-files f1
+  const char* argv[argc] = {"clang_xform", "--display", "--input-files", "f1"};
+  auto args = ProcessCommandLine(argc, const_cast<char**>(argv));
+  EXPECT_FALSE(ValidateCommandLineArgs(args, std::vector<std::string>(), false, errmsg));
+}
+
+TEST(CommandLineArgsTest, ValidateCommandLineArgs_ApplyWithOtherFlags) {
+  // test mutually exclusive flags between --apply and all the others
+  std::string errmsg;
+  constexpr int argc = 4;
+  // args: clang_xform --apply output.yaml -d
+  const char* argv[argc] = {"clang_xform", "--apply", "output.yaml", "-d"};
+  auto args = ProcessCommandLine(argc, const_cast<char**>(argv));
+  EXPECT_FALSE(ValidateCommandLineArgs(args, std::vector<std::string>(), false, errmsg));
+}
+
+TEST(CommandLineArgsTest, ValidateCommandLineArgs_InvalidExtForApplyFile) {
+  // error out if the applied file extension is not .yaml
+  std::string errmsg;
+  constexpr int argc = 3;
+  // args: clang_xform -a output.xml
+  const char* argv[argc] = {"clang_xform", "-a", "output.xml"};
+  auto args = ProcessCommandLine(argc, const_cast<char**>(argv));
+  EXPECT_FALSE(ValidateCommandLineArgs(args, std::vector<std::string>(), false, errmsg));
+}
+
+TEST(CommandLineArgsTest, ValidateCommandLineArgs_InvalidExtForOutputFile) {
+  // error out if the output file extension is not .yaml
+  std::string errmsg;
+  constexpr int argc = 5;
+  // args: clang_xform --output output --input-files f1
+  const char* argv[argc] = {"clang_xform", "--output", "output", "--input-files", "f1"};
+  auto args = ProcessCommandLine(argc, const_cast<char**>(argv));
+  EXPECT_FALSE(ValidateCommandLineArgs(args, std::vector<std::string>(), false, errmsg));
+}
+
+TEST(CommandLineArgsTest, ValidateCommandLineArgs_UnregisteredMatcher) {
+  std::string errmsg;
+  // error out if the selected matcher is unregisted
+  // args: clang_xform --input-files f1 --matchers m1
+  constexpr int argc = 5;
+  const char* argv[argc] = {"clang_xform", "--input-files", "f1", "--matchers", "m1"};
+  auto args = ProcessCommandLine(argc, const_cast<char**>(argv));
+  EXPECT_FALSE(ValidateCommandLineArgs(args, std::vector<std::string>(), false, errmsg));
+}
+
+TEST(CommandLineArgsTest, ValidateCommandLineArgs_InvalidMatcherArgs) {
+  std::string errmsg;
+  constexpr int argc = 5;
+  // error out when arguments are provided for a non-selected matcher Foo
+  // args: clang_xform --input-files f --matchers RenameFcn --matcher-args-Foo --abc 1
+  const char* argv[argc] = {"clang_xform", "--input-files", "f", "--matchers", "RenameFcn"};
+  auto args = ProcessCommandLine(argc, const_cast<char**>(argv));
+  std::vector<std::string> matcherArgs = {"--matcher-args-Foo", "--abc", "1"};
+  EXPECT_FALSE(ValidateCommandLineArgs(args, matcherArgs, false, errmsg));
+}
+
+TEST(CommandLineArgsTest, ValidateCommandLineArgs_NoMatcher) {
+  std::string errmsg;
+  constexpr int argc = 3;
+  // error out if no matcher is selected to run over files or components
+  // args: clang_xform --input-files f
+  const char* argv[argc] = {"clang_xform", "--input-files", "f"};
+  auto args = ProcessCommandLine(argc, const_cast<char**>(argv));
+  EXPECT_FALSE(ValidateCommandLineArgs(args, std::vector<std::string>(), false, errmsg));
 }

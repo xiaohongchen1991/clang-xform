@@ -33,7 +33,7 @@ class MockMatchCallback : public MatchCallbackBase {
  public:
   explicit MockMatchCallback(const std::string& id,
                              clang::tooling::Replacements& replacements,
-                             std::vector<const char*> args)
+                             std::vector<std::string> args)
       : MatchCallbackBase(id, replacements, std::move(args))
   {}
 

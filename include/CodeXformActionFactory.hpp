@@ -39,7 +39,7 @@ class CodeXformActionFactory : public clang::tooling::FrontendActionFactory {
  public:
   CodeXformActionFactory(const std::string& outputFile,
                          const std::vector<std::string>& matchers,
-                         const std::vector<const char*>& matcherArgs)
+                         const std::vector<std::string>& matcherArgs)
       : mOutputFile(outputFile),
         mMatchers(matchers),
         mMatcherArgs(matcherArgs)
@@ -50,7 +50,7 @@ class CodeXformActionFactory : public clang::tooling::FrontendActionFactory {
  private:
   std::reference_wrapper<const std::string> mOutputFile;
   std::reference_wrapper<const std::vector<std::string> > mMatchers;
-  std::reference_wrapper<const std::vector<const char*> > mMatcherArgs;
+  std::reference_wrapper<const std::vector<std::string> > mMatcherArgs;
 };
 
 

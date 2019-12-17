@@ -1,6 +1,6 @@
 -*- compilation-minor -*-
 
 Editting file:
-example.cpp:4:5:
+example.cpp:5:5:
 "Foo" --> "Bar"
 

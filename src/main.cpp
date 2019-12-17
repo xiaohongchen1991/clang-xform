@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
   // first read and remove flags after seperator --
   std::unique_ptr<CompilationDatabase> compilations = FixedCompilationDatabase::loadFromCommandLine(argc, argv, errMsg);
   // strip off arguments for matchers
-  std::vector<const char*> matcherArgs = StripMatcherArgs(argc, argv);
+  std::vector<std::string> matcherArgs = StripMatcherArgs(argc, argv);
   // parse command line options
   CommandLineArgs args;
   try {
@@ -69,14 +69,14 @@ int main(int argc, char **argv) {
 
   // if cfg file is specified, read the flags and adjust args
   try {
-    AdjustCommandLineArgs(args);
+    AdjustCommandLineArgs(args, matcherArgs);
   } catch(FileSystemException& e) {
     std::cerr << e.what() << '\n';
     exit(1);
   }
 
   // validate flags
-  if (!ValidateCommandLineArgs(args, compilations != nullptr, errMsg)) {
+  if (!ValidateCommandLineArgs(args, matcherArgs, compilations != nullptr, errMsg)) {
     std::cerr << errMsg << '\n';
     std::cerr << "See sbcodexform --help" << '\n';
     return 1;
