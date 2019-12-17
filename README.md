@@ -228,7 +228,7 @@ For convenience, we can save this configuration in a file and the above command 
 
 ```
 cd INSTALL_DIR/clang-xform
-bin/clang-xform -e config.cfg -o output.yaml
+bin/clang-xform -c config.cfg -o output.yaml
 
 config.cfg    # config file specifying matchers and input files
 --------------
@@ -249,7 +249,7 @@ sbcodexform
   -h, --help                                    # produce help message
   -v, --version                                 # print out version number
   -a, --apply FILE.yaml                         # apply replacements
-  -e, --config FILE.cfg                         # config file to read
+  -c, --config FILE.cfg                         # config file to read
   -j, --num-threads N                           # number of threads, default all cores
   -p, --compile-commands compile_commands.json  # read compile commands for clang
   -m, --matchers "MATCHER1,MATCHER2,..."        # select matchers to apply
@@ -268,7 +268,7 @@ clang-xform supports more-or-less traditional unix style for the command line op
 
 Specify the replacement file to apply. The extension of the supplied file must be yaml.
 
-## -e, --config FILE.cfg
+## -c, --config FILE.cfg
 
 Refactor files using the specified matchers listed in the given config file "FILE.cfg". Right now, only configurations for input files, matchers, and matcher arguments are supported. Two formats are allowed:
 
@@ -277,7 +277,7 @@ Specify multiple arguments in one line seperated by either space " " or comma ",
 ```
 files.cfg   # config file specifying files to refactor
 --------------
-input-files = FILE1 FILE2
+input-files = FILE1, FILE2
 matchers = RenameFcn, RenameVar
 ```
 

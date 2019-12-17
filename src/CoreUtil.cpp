@@ -85,17 +85,23 @@ std::vector<std::string> ParseConfigFile(const std::string& fileName, const std:
     while (std::getline(ifs, line)) {
       std::istringstream is_line(line);
       std::string next_key;
-      if (std::getline(is_line, next_key, '=') || std::getline(is_line, next_key, ' ')) {
+      char key_sep = (line.find('=') != std::string::npos) ? '=' : ' ';
+      if (std::getline(is_line, next_key, key_sep)) {
         // check if the next_key string is the same as input key string after removing extra white spaces
         next_key = RemoveWhitespace(next_key);
         if (next_key != key) continue;
-        std::string value;
-        while (std::getline(is_line, value, ' ')) {
-          if (value.empty()) {
-            continue;
+        std::string values;
+        // use nested getline to support two delimeter "," and " ".
+        while (std::getline(is_line, values, ',')) {
+          std::istringstream is_values(values);
+          std::string value;
+          while (std::getline(is_values, value, ' ')) {
+            if (value.empty()) {
+              continue;
+            }
+            value = RemoveWhitespace(value);
+            args.emplace_back(std::move(value));
           }
-          value = RemoveWhitespace(value);
-          args.emplace_back(std::move(value));
         }
       }
     }
@@ -111,7 +117,7 @@ std::vector<std::string> ParseConfigFileForMatcherArgs(const std::string& fileNa
   std::ifstream ifs(fileName);
   std::string line;
   std::vector<std::string> args;
-    
+
   if (ifs.good()) {
     while (std::getline(ifs, line)) {
       std::istringstream is_line(line);
