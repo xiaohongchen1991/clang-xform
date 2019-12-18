@@ -22,7 +22,7 @@ using namespace clang::ast_matchers;
 // [9] : name of the node to be replaced
 // [10]: string used to replace the matched node
 // [11]: Use ReplaceText() for replacement and InsertText() for insertion (ex. header insertion)
-// [12]: use "LogASTNode(locStart, srcMgr, oldExprString)" to log matched AST Node information
+// [12]: use "LogASTNode(locBegin, srcMgr, oldExprString)" to log matched AST Node information
 
 namespace {
 
@@ -75,15 +75,15 @@ void __NAME__Callback::run(const clang::ast_matchers::MatchFinder::MatchResult& 
   if (const Expr*/*[5]*/ __NAME__Expr/*[6]*/ =
       Result.Nodes.getNodeAs<Expr/*[7]*/>("__NAME__Expr"/*[8]*/)) {
     // find begin and end file locations of a given node
-    auto locStart = srcMgr.getFileLoc(__NAME__Expr/*[9]*/->getBeginLoc());
+    auto locBegin = srcMgr.getFileLoc(__NAME__Expr/*[9]*/->getBeginLoc());
     auto locEnd = srcMgr.getFileLoc(__NAME__Expr/*[9]*/->getEndLoc());
     newExprString = ""/*[10]*/;
     // find source text for a given location
-    oldExprString = getSourceText(locStart, locEnd, srcMgr, langOpts);
+    oldExprString = getSourceText(locBegin, locEnd, srcMgr, langOpts);
     // replace source text with a given string or use InsertText() to insert new text
-    ReplaceText(srcMgr, SourceRange(std::move(locStart), std::move(locEnd)), newExprString)/*[11]*/;
+    ReplaceText(srcMgr, SourceRange(std::move(locBegin), std::move(locEnd)), newExprString)/*[11]*/;
     // log the replacement or AST node if no replacement is made
-    LogReplacement(locStart, srcMgr, oldExprString, newExprString)/*[12]*/;
+    LogReplacement(locBegin, srcMgr, oldExprString, newExprString)/*[12]*/;
   }
 }
 

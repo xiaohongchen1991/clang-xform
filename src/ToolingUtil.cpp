@@ -35,34 +35,6 @@
 using namespace cxxlog;
 using namespace clang;
 
-clang::SourceLocation getExpansionLocStart(clang::SourceLocation Loc, const clang::SourceManager& sm)
-{
-  if (Loc.isFileID()) return Loc;
-  else {
-    do {
-      Loc = sm.getImmediateExpansionRange(Loc).getBegin();
-      // Loc = sm.getImmediateExpansionRange(Loc).first;
-    } while (!Loc.isFileID());
-    return Loc;
-  }
-}
-
-SourceLocation getExpansionLocEnd(SourceLocation Loc, const SourceManager& sm)
-{
-  if (Loc.isFileID()) return Loc;
-  else {
-    do {
-      if (sm.isMacroArgExpansion(Loc))
-        Loc = sm.getImmediateExpansionRange(Loc).getBegin();
-      // Loc = sm.getImmediateExpansionRange(Loc).first;
-      else
-        Loc = sm.getImmediateExpansionRange(Loc).getEnd();
-      // Loc = sm.getImmediateExpansionRange(Loc).second;
-    } while (!Loc.isFileID());
-    return Loc;
-  }
-}
-
 std::string getSourceText(SourceLocation Start,
                           SourceLocation End,
                           const SourceManager& SM,

@@ -69,15 +69,15 @@ void RenameFcnCallback::run(const clang::ast_matchers::MatchFinder::MatchResult&
     // find begin and end file locations of a given node
     // use getExprLoc() for the begin loc which returns MemberLoc if it is a member function.
     // i.e. X->F return F
-    auto locStart = srcMgr.getFileLoc(RenameFcnExpr->getCallee()->getExprLoc());
+    auto locBegin = srcMgr.getFileLoc(RenameFcnExpr->getCallee()->getExprLoc());
     auto locEnd = srcMgr.getFileLoc(RenameFcnExpr->getCallee()->getEndLoc());
     newExprString = GetOption<std::string>(option2);
     // find source text for a given location
-    oldExprString = getSourceText(locStart, locEnd, srcMgr, langOpts);
+    oldExprString = getSourceText(locBegin, locEnd, srcMgr, langOpts);
     // replace source text with a given string
-    ReplaceText(srcMgr, SourceRange(std::move(locStart), std::move(locEnd)), newExprString);
+    ReplaceText(srcMgr, SourceRange(std::move(locBegin), std::move(locEnd)), newExprString);
     // log the replacement or AST node if no replacement is made
-    LogReplacement(locStart, srcMgr, oldExprString, newExprString);
+    LogReplacement(locBegin, srcMgr, oldExprString, newExprString);
   }
 }
 

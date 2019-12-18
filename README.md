@@ -51,7 +51,7 @@ cd INSTALL_DIR/clang-xform/src/matchers/rename
 // [9] : name of the node to be replaced
 // [10]: string used to replace the matched node
 // [11]: Use ReplaceText() for replacement and InsertText() for insertion (ex. header insertion)
-// [12]: use "LogASTNode(locStart, srcMgr, oldExprString)" to log matched AST Node information
+// [12]: use "LogASTNode(locBegin, srcMgr, oldExprString)" to log matched AST Node information
 
 namespace {
 
@@ -85,15 +85,15 @@ void RenameFooCallback::run(const clang::ast_matchers::MatchFinder::MatchResult&
   if (const Expr* /*[5]*/ RenameFooExpr/*[6]*/ =
       Result.Nodes.getNodeAs<Expr/*[7]*/>("RenameFooExpr"/*[8]*/)) {
     // find begin and end file locations of a given node
-    auto locStart = srcMgr.getFileLoc(RenameFooExpr/*[9]*/->getBeginLoc());
+    auto locBegin = srcMgr.getFileLoc(RenameFooExpr/*[9]*/->getBeginLoc());
     auto locEnd = srcMgr.getFileLoc(RenameFooExpr/*[9]*/->getEndLoc());
     newExprString = ""/*[10]*/;
     // find source text for a given location
-    oldExprString = getSourceText(locStart, locEnd, srcMgr, langOpts);
+    oldExprString = getSourceText(locBegin, locEnd, srcMgr, langOpts);
     // replace source text with a given string or use InsertText() to insert new text
-    ReplaceText(srcMgr, SourceRange(std::move(locStart), std::move(locEnd)), newExprString)/*[11]*/;
+    ReplaceText(srcMgr, SourceRange(std::move(locBegin), std::move(locEnd)), newExprString)/*[11]*/;
     // log the replacement or AST node if no replacement is made
-    LogReplacement(locStart, srcMgr, oldExprString, newExprString)/*[12]*/;
+    LogReplacement(locBegin, srcMgr, oldExprString, newExprString)/*[12]*/;
   }
 }
 ```
@@ -125,15 +125,15 @@ void RenameFooCallback::run(const clang::ast_matchers::MatchFinder::MatchResult&
   if (const CallExpr* /*[5]*/ RenameFooExpr/*[6]*/ =
       Result.Nodes.getNodeAs<CallExpr/*[7]*/>("RenameFooExpr"/*[8]*/)) {
     // find begin and end file locations of a given node
-    auto locStart = srcMgr.getFileLoc(RenameFooExpr/*[9]*/->getCallee()->getExprLoc());
+    auto locBegin = srcMgr.getFileLoc(RenameFooExpr/*[9]*/->getCallee()->getExprLoc());
     auto locEnd = srcMgr.getFileLoc(RenameFooExpr/*[9]*/->getCallee()->getEndLoc());
     newExprString = "Bar"/*[10]*/;
     // find source text for a given location
-    oldExprString = getSourceText(locStart, locEnd, srcMgr, langOpts);
+    oldExprString = getSourceText(locBegin, locEnd, srcMgr, langOpts);
     // replace source text with a given string or use InsertText() to insert new text
-    ReplaceText(srcMgr, SourceRange(std::move(locStart), std::move(locEnd)), newExprString)/*[11]*/;
+    ReplaceText(srcMgr, SourceRange(std::move(locBegin), std::move(locEnd)), newExprString)/*[11]*/;
     // log the replacement or AST node if no replacement is made
-    LogReplacement(locStart, srcMgr, oldExprString, newExprString)/*[12]*/;
+    LogReplacement(locBegin, srcMgr, oldExprString, newExprString)/*[12]*/;
   }
 }
 ```
@@ -488,6 +488,115 @@ Here is an example. Let's say we want to include a new header "Foo/foo.hpp". We 
 ```
 
 Note that, when inserting new header includes, it is best for your matcher to match each translation unit only once (remove isExpansionInMainFile from generated template matcher) to avoid including the same header multiple times.
+
+## Q3. How to get correct source location for macro expansion?
+
+Clang::SourceLocation is designed to store both unexpanded locations and macro expanded locations. All AST statements or declarations have two member functions to retrieve its beginning and end source location, i.e. Stmt/Decl::getBeginLoc() and Stmt/Decl::getEndLoc(). But this pair of Clang::SourceLocation cannot be used directly to deal with macro expression. Before further discussion, let's first introduce a few basic concepts used in Clang.
+
+Clang::SourceLocation represents a location either in a file or a macro expansion. This can be determined by two member functions,
+
+```
+bool SourceLocation::isFileID();
+bool SourceLocation::isMacroID();
+```
+
+For example,
+
+```
+// an example to demonstrate whether a SourceLocation is in a file or a macro expansion
+#define ADDONE(expr) expr + 1
+//                          ^
+//                          L1
+
+int i;
+//  ^
+//  L2
+
+i = ADDONE( 1 );
+//  ^       ^ ^
+//  L3     L4 L5
+```
+
+A binary operator matcher will match the expression "1 + 1" (expanded by ADDONE(1)) represented by Clang::BinaryOperator while a variable declaration matcher will match the expression "int i" represented by Clang::VarDecl. Let's call these two variables "binaryop" and "vardecl" respectively. Then, the format of their source locations printouts will look like,
+
+```
+vardecl.getEndLoc():  : "L2"
+binaryop.getBeginLoc(): "L3<Spelling=L4>"
+binaryop.getEndLoc()  : "L3<Spelling=L1>"
+```
+
+In this example, vardecl.getEndLoc() is a file location while both binaryop.getBeginLoc() and binaryop.getEndLoc()
+are macro expansion locations.
+
+For locations in macro expansion, Clang::SourceLocation will encode two pieces of information, namely expansion location and spelling location. Spelling locations represent where the bytes corresponding to a token came from and expansion locations represent where the location is in the user's view. In the case of a macro expansion, for example, the spelling location indicates where the expanded token came from and the expansion location specifies where it was expanded. The SourceManager can be queried for information about SourceLocation objects, turning them into either spelling or expansion locations by using the following APIs.
+
+```
+SourceLocation SourceMagager::getExpansionLoc(SourceLocation);
+SourceLocation SourceMagager::getSpellingLoc(SourceLocation);
+```
+
+That means, for the above example we have
+
+```
+srcMgr.getExpansionLoc(binaryop.getBeginLoc()) -> L3
+srcMgr.getSpellingLoc(binaryop.getBeginLoc())  -> L4
+srcMgr.getExpansionLoc(binaryop.getEndLoc())   -> L3
+srcMgr.getSpellingLoc(binaryop.getEndLoc())    -> L1
+```
+
+Note that "SourceMagager::getExpansionLoc()" returns the point where the macro is expanded. That is "L3" for both binaryop.getBeginLoc() and binaryop.getEndLoc(). In some scenarios, location "L5" may be interested. And it can be accessed by using "SourceMagager::getExpansionRange()", i.e.
+
+```
+srcMgr.getExpansionRange(binaryop.getEndLoc()).getBegin() -> L3
+srcMgr.getExpansionRange(binaryop.getEndLoc()).getEnd()   -> L5
+```
+
+By default, the template matcher file uses "SourceMagager::getFileLoc()" to retrieve source location. Given a macro location, the API returns its spelling location if it is macro argument expansion, otherwise returns expansion location. i.e.
+
+```
+srcMgr.getFileLoc(binaryop.getBeginLoc()) -> L4
+srcMgr.getFileLoc(binaryop.getEndLoc())   -> L3
+```
+
+Note that "L4" is macro argument expansion, while "L1" is macro body expansion. If binaryop.getBeginLoc() and binaryop.getEndLoc() are directly used to get source text, then their spelling locations will be used.
+
+## Q4. How to retrieve source code context?
+
+First, you need a pair of Clang::SourceLocation to mark the range of the source code. See L</Q3. How to get correct source location for macro expansion?> for more details.
+
+Then, just use the self-defined API getSourceText() provided in ToolingUtil.hpp to get the corresponding source code context.
+
+```
+std::string getSourceText(clang::SourceLocation start,
+	                      clang::SourceLocation end,
+                          const clang::SourceManager& sm,
+                          const clang::LangOptions &langOpts);
+```
+
+In case you are interested, here are two possible implementations based on Clang::Lexer.
+
+```
+// implementation 1
+std::string getSourceText(SourceLocation Start,
+                          SourceLocation End,
+                          const SourceManager& SM,
+                          const LangOptions &LangOpts)
+{
+    End = Lexer::getLocForEndOfToken(End, 0, SM, LangOpts);
+    return std::string(SM.getCharacterData(Start),
+                       SM.getCharacterData(End) - SM.getCharacterData(Start));
+}
+
+// implementation 2
+std::string getSourceText(SourceLocation Start,
+                          SourceLocation End,
+                          const SourceManager& SM,
+                          const LangOptions &LangOpts)
+{
+    CharSourceRange Range = Lexer::getAsCharRange(SourceRange(std::move(Start), std::move(End)), SM, LangOpts);
+    return Lexer::getSourceText(Range ,SM, LangOpts);
+}
+```
 
 # Linking
 

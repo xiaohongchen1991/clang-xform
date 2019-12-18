@@ -36,10 +36,6 @@ class SourceManager;
 class LangOptions;
 }
 
-// self-defined functions to get SourceLocation for expression in MACRO
-clang::SourceLocation getExpansionLocStart(clang::SourceLocation loc, const clang::SourceManager& sm);
-clang::SourceLocation getExpansionLocEnd(clang::SourceLocation loc, const clang::SourceManager& sm);
-
 // self-define functions to retrieve source code context from Lexer module
 std::string getSourceText(clang::SourceLocation start,
                           clang::SourceLocation end,
