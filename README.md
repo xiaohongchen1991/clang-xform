@@ -486,7 +486,7 @@ The major difference here is that InsertText() allows duplications and conflicts
 
 An API is provided in "MatchCallbackBase.hpp" to insert header includes. i.e.
 
-```
+```cpp
 // insert a new header include in the file specified by fileID and
 // group header includes matching the given regex
 llvm::Optional<clang::SourceLocation> InsertHeader(const clang::SourceManager& srcMgr,
@@ -503,7 +503,7 @@ This API will first look up for the given header in the file. If it is already e
 
 Here is an example. Let's say we want to include a new header "Foo/foo.hpp". We can set regex to be "Foo". The followings are some possible results.
 
-```
+```cpp
 // file1
 #include "Foo/foo2.hpp"
 #include "Foo/foo.hpp"
@@ -530,14 +530,14 @@ Clang::SourceLocation is designed to store both unexpanded locations and macro e
 
 Clang::SourceLocation represents a location either in a file or a macro expansion. This can be determined by two member functions,
 
-```
+```cpp
 bool SourceLocation::isFileID();
 bool SourceLocation::isMacroID();
 ```
 
 For example,
 
-```
+```cpp
 // an example to demonstrate whether a SourceLocation is in a file or a macro expansion
 #define ADDONE(expr) expr + 1
 //                          ^
@@ -565,7 +565,7 @@ are macro expansion locations.
 
 For locations in macro expansion, Clang::SourceLocation will encode two pieces of information, namely expansion location and spelling location. Spelling locations represent where the bytes corresponding to a token came from and expansion locations represent where the location is in the user's view. In the case of a macro expansion, for example, the spelling location indicates where the expanded token came from and the expansion location specifies where it was expanded. The SourceManager can be queried for information about SourceLocation objects, turning them into either spelling or expansion locations by using the following APIs.
 
-```
+```cpp
 SourceLocation SourceMagager::getExpansionLoc(SourceLocation);
 SourceLocation SourceMagager::getSpellingLoc(SourceLocation);
 ```
@@ -597,11 +597,11 @@ Note that "L4" is macro argument expansion, while "L1" is macro body expansion. 
 
 ## Q4. How to retrieve source code context?
 
-First, you need a pair of Clang::SourceLocation to mark the range of the source code. See [Q3. How to get correct source location for macro expansion?](Q3.-How-to-get-correct-source-location-for-macro-expansion?) for more details.
+First, you need a pair of Clang::SourceLocation to mark the range of the source code. See [#Q3. How to get correct source location for macro expansion?](Q3.-How-to-get-correct-source-location-for-macro-expansion?) for more details.
 
 Then, just use the self-defined API getSourceText() provided in ToolingUtil.hpp to get the corresponding source code context.
 
-```
+```cpp
 std::string getSourceText(clang::SourceLocation start,
 	                      clang::SourceLocation end,
                           const clang::SourceManager& sm,
@@ -610,7 +610,7 @@ std::string getSourceText(clang::SourceLocation start,
 
 In case you are interested, here are two possible implementations based on Clang::Lexer.
 
-```
+```cpp
 // implementation 1
 std::string getSourceText(SourceLocation Start,
                           SourceLocation End,
