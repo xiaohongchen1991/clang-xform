@@ -39,10 +39,12 @@
 #include "clang/Basic/Diagnostic.h"
 #include "clang/Basic/DiagnosticOptions.h"
 #include "llvm/Support/raw_os_ostream.h"
+#include "llvm/Support/FileSystem.h"
 
 using namespace clang::tooling;
 using namespace clang;
 using namespace llvm;
+using namespace llvm::sys;
 
 namespace {
 
@@ -162,14 +164,21 @@ int ProcessFiles(const CompilationDatabase& compilationDatabase,
   auto const hwConcurrency = std::max(
       1u, std::min(numThreads, std::max(4u, std::thread::hardware_concurrency())));
   auto const numFiles = inputFiles.size();
-    
+
   auto const filesPerCore = std::max(
       size_t(3), static_cast<size_t>(std::round(double(numFiles) / double(hwConcurrency))));
 
   numThreads = ceil(double(numFiles) / double(filesPerCore));
-    
+
   std::vector<std::thread> threads;
   std::vector<std::future<std::tuple<int, std::string> > > futures;
+
+  // store current cwd
+  // store current cwd
+  SmallString<256> tmp_path;
+  std::string cwd;
+  fs::current_path(tmp_path);
+  cwd = tmp_path.str();
 
   // loop through the list of files and process filesPerCore during each loop iteration.
   for (size_t beginRange = 0, endRange = std::min(numFiles, filesPerCore); beginRange < numFiles;
@@ -183,6 +192,9 @@ int ProcessFiles(const CompilationDatabase& compilationDatabase,
         {
           clang::tooling::ClangTool tool(compilationDatabase, files);
 
+          // Disable RestoreWorkingDir in ClangTool::run to avoid threading issues.
+          // Will manually restore it at the end
+          tool.setRestoreWorkingDir(false);
           std::stringstream diagnostics;
           llvm::raw_os_ostream raw_ostream(diagnostics);
           clang::DiagnosticOptions diagOpts;
@@ -208,7 +220,7 @@ int ProcessFiles(const CompilationDatabase& compilationDatabase,
       task();
     }
   }
-    
+
   // wait for all the futures to finish and return the number of failed tasks.
   auto ret = std::accumulate(futures.begin(), futures.end(), 0,
                              [](int sum, std::future<std::tuple<int, std::string> >& f)
@@ -221,7 +233,7 @@ int ProcessFiles(const CompilationDatabase& compilationDatabase,
                                if ((0 != nextStatus) && !nextErrorMessage.empty()) {
                                  throw RunClangToolException(nextErrorMessage);
                                }
-                            
+
                                return sum + nextStatus;
                              });
 
@@ -234,5 +246,9 @@ int ProcessFiles(const CompilationDatabase& compilationDatabase,
                     t.join();
                   }
                 });
+
+  // restore cwd
+  fs::set_current_path(cwd);
+
   return ret;
 }

@@ -420,6 +420,41 @@ RenameFcn
   --new-name                                    # new name used to replace matched name
 ```
 
+# CONCURRENCY SUPPORT
+
+The current version of Clang libtooling library is not thread-safe. Simply creating multiple instances of clang::tooling::ClangTool and running them on multiple threads may lead to unexpected behavior. This is due to the implementation of the API ClangTool::run() in which the current working directory is modified. To be more specific, let's assume the tool is creating two threads. Each thread instantiate a clang::tooling::ClangTool object and running over one source file using the following compile_commands.json file.
+
+```
+// compile_commands.json
+[
+   {
+       "directory": "DIR1",
+       "file": "Foo.cpp",
+       "command": "clang++ -c Foo.cpp -I/usr/local/include -I/usr/include/x86_64-linux-gnu -I/usr/include"
+   },
+   {
+       "directory": "DIR2",
+       "file": "Bar.cpp",
+       "command": "clang++ -c Bar.cpp -I/usr/local/include -I/usr/include/x86_64-linux-gnu -I/usr/include"
+   }
+]
+```
+
+When the API ClangTool::run() is invoked in each thread, the following scenario describe a possible execution order.
+
+* thread 1 changes the current working directory to DIR1
+* thread 2 changes the current working directory to DIR2
+* thread 1 runs over the file "Foo.cpp" with the given compile command
+* thread 2 runs over the file "Bar.cpp" with the given compile command
+* thread 1 restores the original current working directory
+* thread 2 restores the original current working directory
+
+In this case, the file "Bar.cpp" will be processed correctly, but the tool wouldn't find the file "Foo.cpp" in directory "DIR2". So, one possible solution for this thread safety issue is to use absolute path in compile_commands.json file. The difficulty here is that updating "command" field to use absolute path is not an easy task.
+
+An alternative solution is to require all the "directory" fields in the compile\_commands.json file to have the same path. This approach is used by this tool.
+
+Note that ClangTool::run() will restore the original current working directory at the end. We don't want this behavior for either solution stated above. One can use ClangTool::setRestoreWorkingDir() to disable it.
+
 # FAQ
 
 ## Q1. What is the difference between "Replacement" and "Insertion"?
@@ -562,7 +597,7 @@ Note that "L4" is macro argument expansion, while "L1" is macro body expansion. 
 
 ## Q4. How to retrieve source code context?
 
-First, you need a pair of Clang::SourceLocation to mark the range of the source code. See L</Q3. How to get correct source location for macro expansion?> for more details.
+First, you need a pair of Clang::SourceLocation to mark the range of the source code. See [Q3. How to get correct source location for macro expansion?](Q3.-How-to-get-correct-source-location-for-macro-expansion?) for more details.
 
 Then, just use the self-defined API getSourceText() provided in ToolingUtil.hpp to get the corresponding source code context.
 

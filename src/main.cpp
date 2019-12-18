@@ -201,7 +201,7 @@ int main(int argc, char **argv) {
         JSONCompilationDatabase::loadFromFile(compileCommands.substr(pos + 1,
                                                                      compileCommands.length() -pos - 1),
                                               errMsg,
-                                              JSONCommandLineSyntax::Gnu);
+                                              JSONCommandLineSyntax::AutoDetect);
     if (!compilations) {
       std::cerr << "Error while trying to load a json compilation database:\n"
                 << errMsg << '\n'
