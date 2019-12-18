@@ -153,7 +153,7 @@ bin/clang-xform -d
 
 This will print a list of registered matchers. You should find "RenameFoo" among them.
 
-6. The file "clang-xform/test/rename/RenameFcn/example.cpp" contains callsites of function "*Foo*". We can first run the matcher on this file to give a try.
+6. The file "clang-xform/test/rename/RenameFcn/example.cpp" contains callsites of function "Foo". We can first run the matcher on this file to give a try.
 
 ```
 bin/clang-xform -m RenameFoo -o output.yaml test/rename/RenameFcn/example.cpp
@@ -597,7 +597,7 @@ Note that "L4" is macro argument expansion, while "L1" is macro body expansion. 
 
 ## Q4. How to retrieve source code context?
 
-First, you need a pair of Clang::SourceLocation to mark the range of the source code. See [#Q3. How to get correct source location for macro expansion?](Q3.-How-to-get-correct-source-location-for-macro-expansion?) for more details.
+First, you need a pair of Clang::SourceLocation to mark the range of the source code. See [Q3. How to get correct source location for macro expansion?](#Q3.-How-to-get-correct-source-location-for-macro-expansion?) for more details.
 
 Then, just use the self-defined API getSourceText() provided in ToolingUtil.hpp to get the corresponding source code context.
 
